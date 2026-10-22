@@ -1,5 +1,5 @@
 // Moves purple in the archived raster images (WebP/PNG/JPEG) to the BetterPitch
-// midnight navy & silver (version 4), the same mapping server.js applies to CSS/HTML
+// deep teal & pearl (version 5), the same mapping server.js applies to CSS/HTML
 // colours. Only purple pixels change (hue 235-340); skin, greys, black and
 // white stay as they are.
 // Results go to archive/recolored/<file>; the originals are left untouched and
@@ -34,11 +34,11 @@ async function recolorInPage(dataUrl, type) {
     // Soft edges on hue and saturation so there is no visible seam in gradients/photos.
     const w = Math.min(1, Math.max(0, (h - 235) / 15), Math.max(0, (340 - h) / 15)) * Math.min(1, Math.max(0, (s - .08) / .1));
     if (w <= 0) continue;
-    // same mapping as toTheme() in server.js: dark/mid -> navy and sapphire, light -> icy silver
-    const t = Math.min(1, Math.max(0, (l - .6) / .2));
-    const nh = 218 + (Math.min(335, Math.max(240, h)) - 240) * .05;
-    const sd = Math.max(.35, Math.min(s, .85) * .85), sl = Math.min(s, .4) * .55;
-    const ns = sd + (sl - sd) * t, nl = l * .85 + (l - l * .85) * t;
+    // same mapping as toTheme() in server.js: dark/mid -> deep teal and peacock, light -> pearl
+    const t = Math.min(1, Math.max(0, (l - .62) / .18));
+    const nh = 182 + (Math.min(335, Math.max(240, h)) - 240) * .06;
+    const sd = Math.max(.4, Math.min(s, .85) * .8), sl = Math.min(s, .35) * .45;
+    const ns = sd + (sl - sd) * t, nl = l * .7 + (l - l * .7) * t;
     d[i] += (f(0, nh, ns, nl) - d[i]) * w;
     d[i + 1] += (f(8, nh, ns, nl) - d[i + 1]) * w;
     d[i + 2] += (f(4, nh, ns, nl) - d[i + 2]) * w;

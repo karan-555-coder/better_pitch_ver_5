@@ -1,100 +1,65 @@
-/* Site-wide BetterPitch look (version 4, midnight navy & silver), loaded on
-   every page by server.js: slow star dust drifting over dark sections, a silver
-   shine sweeping across headings, images developing out of moonlight, cards
-   flipping up in 3D, a metallic glare across cards on hover, buttons filling
-   with liquid silver from the cursor, paragraphs inking in from silver and a
-   nav that slips away while you scroll down (state set by theme.js). Colours
-   and motion only: nothing here changes layout. */
+/* Site-wide BetterPitch look (version 5, deep teal & pearl), loaded on every
+   page by server.js: caustic light rippling over dark sections, sections
+   rising into view behind a wave like the tide, images opening out of a
+   pearl, water filling cards from the bottom on hover, a pearl gliding under
+   the nav links, and the styles for the GSAP layers (motion.js, interact.js).
+   State is set by theme.js. Colours and motion only: nothing here changes
+   layout. */
 
-/* the big white panels fade in from the silver-white page instead of starting on a hard edge */
+/* the big white panels fade in from the pearl page instead of starting on a hard edge */
 main .bg-white.rounded-2xl.py-16{
   background-color:transparent;
-  background-image:radial-gradient(700px 420px at var(--bp-beam,50%) 0%,rgba(79,113,182,.1),transparent 70%),
-    linear-gradient(180deg,var(--color-secondary-light-ivory) 0%,#fff 12%,#fff 88%,var(--color-secondary-light-ivory) 100%)}
-/* --bp-beam is scrubbed across by motion.js (GSAP) as the panel scrolls past */
+  background-image:linear-gradient(180deg,var(--color-secondary-light-ivory) 0%,#fff 12%,#fff 88%,var(--color-secondary-light-ivory) 100%)}
 
-/* star dust on dark sections: two layers drifting at different speeds */
-[data-bp-stars]{
+::selection{background:#bfe3df;color:#04181b}
+
+/* caustic light on dark sections: soft aqua patches drifting past each other */
+[data-bp-caustic]{
   background-image:
-    radial-gradient(1.2px 1.2px at 20% 30%,rgba(214,226,246,.75),transparent 70%),
-    radial-gradient(1px 1px at 70% 60%,rgba(214,226,246,.6),transparent 70%),
-    radial-gradient(1.4px 1.4px at 45% 85%,rgba(214,226,246,.7),transparent 70%),
-    radial-gradient(1px 1px at 85% 15%,rgba(214,226,246,.55),transparent 70%),
-    radial-gradient(1px 1px at 10% 70%,rgba(214,226,246,.5),transparent 70%),
-    radial-gradient(1.6px 1.6px at 60% 20%,rgba(214,226,246,.8),transparent 70%);
-  background-size:260px 260px,260px 260px,260px 260px,420px 420px,420px 420px,420px 420px;
-  animation:bpStars 90s linear infinite}
-@keyframes bpStars{to{background-position:260px -260px,260px -260px,260px -260px,-420px -420px,-420px -420px,-420px -420px}}
+    radial-gradient(32% 22% at 20% 30%,rgba(170,240,230,.10),transparent 70%),
+    radial-gradient(26% 18% at 75% 25%,rgba(200,250,240,.08),transparent 70%),
+    radial-gradient(36% 24% at 55% 70%,rgba(120,220,210,.09),transparent 70%),
+    radial-gradient(24% 16% at 10% 80%,rgba(220,250,245,.07),transparent 70%);
+  background-size:140% 140%,160% 160%,150% 150%,170% 170%;
+  animation:bpCaustic 18s ease-in-out infinite alternate}
+@keyframes bpCaustic{
+  0%{background-position:0% 0%,100% 0%,50% 100%,0% 100%}
+  100%{background-position:100% 60%,0% 80%,20% 0%,90% 20%}}
 
-/* headings rise in, then a silver shine sweeps across the letters */
-[data-bp-rise]{transition:opacity .9s ease,translate 1s cubic-bezier(.2,.75,.2,1)}
-[data-bp-rise="wait"]{opacity:0;translate:0 28px}
-[data-bp-shine]{
-  background-image:linear-gradient(110deg,var(--bp-ink) 42%,#dfe8f6 49%,#fff 50%,#dfe8f6 51%,var(--bp-ink) 58%);
-  background-size:260% 100%;background-position:100% 0;
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
-[data-bp-shine="in"]{animation:bpShine 1.5s cubic-bezier(.45,0,.2,1) forwards}
-@keyframes bpShine{to{background-position:0 0}}
+/* sections rise into view behind a moving wave (--bp-tide 0% -> 100%) */
+@property --bp-tide{syntax:"<percentage>";inherits:false;initial-value:100%}
+[data-bp-tide]{
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 400' preserveAspectRatio='none'%3E%3Cpath d='M0 200 Q100 170 200 200 T400 200 T600 200 T800 200 V400 H0Z'/%3E%3C/svg%3E") 0 var(--bp-tide)/800px 200% repeat-x;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 400' preserveAspectRatio='none'%3E%3Cpath d='M0 200 Q100 170 200 200 T400 200 T600 200 T800 200 V400 H0Z'/%3E%3C/svg%3E") 0 var(--bp-tide)/800px 200% repeat-x;
+  transition:--bp-tide 1.3s cubic-bezier(.65,.05,.25,1)}
+[data-bp-tide="wait"]{--bp-tide:0%}
 
-/* images develop out of moonlight: cold, dim and grey -> full colour */
-[data-bp-dev]{transition:filter 1.6s ease,scale 1.8s cubic-bezier(.2,.75,.2,1)}
-[data-bp-dev="wait"]{filter:grayscale(1) brightness(.55) contrast(1.1);scale:1.06}
-[data-bp-dev="wait"][data-bp-clip]{scale:1.14}
+/* images open out of a pearl: a small rounded oval widening to the full frame */
+[data-bp-iris]{transition:clip-path 1.3s cubic-bezier(.65,.05,.25,1)}
+[data-bp-iris="wait"]{clip-path:inset(30% 30% round 50%)}
+[data-bp-iris="in"]{clip-path:inset(0 round var(--bp-r,0px))}
 
-/* cards flip up in 3D, one after another along a row */
-[data-bp-flip]{transform-origin:50% 100%;transition:transform 1s cubic-bezier(.2,.75,.2,1) var(--bp-d,0s),opacity .8s ease var(--bp-d,0s)}
-[data-bp-flip="wait"]{opacity:0;transform:perspective(900px) rotateX(24deg) translateY(36px)}
+/* water fills a card from the bottom on hover, its surface drifting sideways */
+[data-bp-liquid]{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100' preserveAspectRatio='none'%3E%3Cpath d='M0 12 Q50 0 100 12 T200 12 T300 12 T400 12 V100 H0Z' fill='%23208a91' fill-opacity='.08'/%3E%3C/svg%3E");
+  background-repeat:repeat-x;background-size:400px 0%;background-position:0 100%;
+  transition:background-size .8s cubic-bezier(.2,.75,.2,1),box-shadow .4s ease}
+[data-bp-liquid]:hover{background-size:400px 55%;animation:bpLiquid 4s linear infinite;
+  box-shadow:0 24px 50px -34px rgba(10,80,84,.5)}
+@keyframes bpLiquid{to{background-position:400px 100%}}
 
-/* metallic glare crossing a card on hover (snaps back without sweeping) */
-[data-bp-glare]{background-image:linear-gradient(115deg,transparent 38%,rgba(196,212,238,.5) 50%,transparent 62%);
-  background-repeat:no-repeat;background-size:260% 100%;background-position:130% 0;transition:box-shadow .4s ease}
-[data-bp-glare]:hover{background-position:-30% 0;transition:background-position .9s cubic-bezier(.45,0,.2,1),box-shadow .4s ease;
-  box-shadow:0 26px 50px -34px rgba(20,40,90,.55)}
+/* teal buttons: pearl sheen and a soft aqua glow on hover (interact.js adds the wobble) */
+a.bg-primary-800,button.bg-primary-800{transition:box-shadow .35s ease,background-color .35s ease}
+a.bg-primary-800:hover,button.bg-primary-800:hover{
+  background-image:linear-gradient(120deg,transparent 20%,rgba(220,250,245,.22) 45%,rgba(255,230,240,.16) 55%,transparent 80%);
+  box-shadow:inset 0 0 0 1px rgba(170,224,218,.6),0 12px 30px -12px rgba(32,138,145,.7)}
 
-/* navy buttons fill with liquid silver from where the cursor came in */
-@property --bp-br{syntax:"<length>";inherits:false;initial-value:0px}
-a.bg-primary-800,button.bg-primary-800{
-  background-image:radial-gradient(circle at var(--bp-bx,50%) var(--bp-by,50%),#e4ebf6 0,#c4d2e8 var(--bp-br),transparent calc(var(--bp-br) + 1px));
-  box-shadow:inset 0 0 0 1px rgba(176,198,232,.45);
-  transition:--bp-br .55s cubic-bezier(.45,0,.2,1),color .3s ease,box-shadow .3s ease}
-a.bg-primary-800:hover,button.bg-primary-800:hover{--bp-br:320px;color:#0b1430;
-  box-shadow:inset 0 0 0 1px rgba(176,198,232,.9),0 12px 30px -14px rgba(32,89,200,.65)}
-
-/* paragraphs ink in from silver */
-[data-bp-ink]{transition:color 1.3s ease}
-[data-bp-ink="wait"]{color:#b9c6da}
-
-/* nav slips up while scrolling down and comes back on the way up */
-#page-scroller nav{transition:translate .45s cubic-bezier(.65,.05,.25,1),box-shadow .4s ease}
-nav[data-bp-away]{translate:0 -120%}
-nav[data-bp-scrolled]{box-shadow:0 1px 0 rgba(176,198,232,.5),0 14px 30px -24px rgba(10,20,48,.45)}
-
-/* interact.js: effects layer for the star trail and click bursts */
-#bp-fx{position:fixed;inset:0;pointer-events:none;z-index:2147483001;overflow:hidden}
-.bp-star{position:absolute;left:0;top:0;pointer-events:none;
-  background:radial-gradient(circle,#fff 0 22%,#c8d6ee 40%,#4f71b6 75%);
-  clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%)}
-
-/* hero headline words lift and glow silver near the mouse (--bp-glow 0..1) */
-#bp-hero .bp-w{display:inline-block;
-  color:color-mix(in srgb,#fff calc(100% - var(--bp-glow,0) * 100%),#a9c1ec);
-  text-shadow:0 0 calc(var(--bp-glow,0) * 22px) rgba(150,180,235,.85)}
-
-/* hero chips and badges can be thrown */
-[data-bp-throw]{cursor:grab;touch-action:none;user-select:none}
-[data-bp-throw]:active{cursor:grabbing}
-
-/* moon back-to-top button: the shadow disk slides off as you scroll (--bp-phase 0..1) */
-.bp-moon{position:fixed;left:22px;bottom:22px;z-index:2147483000;width:52px;height:52px;padding:0;border-radius:50%;overflow:hidden;cursor:pointer;
-  border:1px solid rgba(176,198,232,.45);background:radial-gradient(circle at 50% 35%,#1a2b55,#070b16 75%);
-  box-shadow:0 12px 30px -12px rgba(7,11,22,.7);opacity:0;scale:.6;pointer-events:none;
-  transition:opacity .4s ease,scale .45s cubic-bezier(.2,.75,.2,1.4),box-shadow .3s ease}
-.bp-moon[data-show]{opacity:1;scale:1;pointer-events:auto}
-.bp-moon:hover{box-shadow:0 0 0 6px rgba(176,198,232,.12),0 0 34px rgba(150,180,235,.6),0 12px 30px -12px rgba(7,11,22,.7);scale:1.08}
-.bp-moon::before{content:"";position:absolute;inset:13px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#c8d6ee 55%,#8ea6cc)}
-.bp-moon i{position:absolute;inset:12px;border-radius:50%;background:#0e1834;translate:calc(var(--bp-phase,.12) * 30px) 0;transition:translate .2s linear}
+/* pearl gliding under the nav link being hovered (interact.js moves it) */
+.bp-pearl{position:fixed;left:0;top:0;width:10px;height:10px;border-radius:50%;pointer-events:none;z-index:2147483000;opacity:0;
+  background:radial-gradient(circle at 35% 30%,#fff,#e9f5f2 40%,#bfe3df 70%,#8fc4c0);
+  box-shadow:0 0 12px rgba(143,208,200,.8),0 2px 4px rgba(4,24,27,.25)}
 
 @media (prefers-reduced-motion:reduce){
-  [data-bp-stars]{animation:none}
-  nav[data-bp-away]{translate:none}
+  [data-bp-caustic],[data-bp-liquid]:hover{animation:none}
+  [data-bp-tide],[data-bp-iris]{transition:none}
 }

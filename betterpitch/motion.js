@@ -1,11 +1,10 @@
-// Scroll-driven motion for version 4 on GSAP + ScrollTrigger (served by
+// Scroll-driven motion for version 5 on GSAP + ScrollTrigger (served by
 // server.js from node_modules), on top of theme.js:
-//  - hero: copy, panel and tile grid drift apart while you scroll away, the
-//    box settles back a little, the tiles follow the mouse and the play orb floats;
-//  - dark sections open as a growing moon circle, scrubbed with the scroll;
-//  - a moonlight beam sweeps across the big white panels as you scroll past;
-//  - images lean with the scroll speed and the logo marquees speed up with it;
-//  - small icons orbit in with a spring, footer links rise in one by one.
+//  - headings come in seen through water: an SVG ripple distorts them and
+//    calms down until they are still;
+//  - cards surface one after another, rising and coming into focus;
+//  - logos in the marquees bob like they are floating;
+//  - the page background deepens from pearl towards sea glass as you scroll down.
 // It only animates elements that have no transform of their own and starts
 // after theme.js, so the two layers never fight over the same property.
 (function () {
@@ -16,95 +15,70 @@
   const below = el => { const r = el.getBoundingClientRect(); return r.height > 0 && r.top >= innerHeight; };
   const free = el => { const cs = getComputedStyle(el); return cs.transform === 'none' && cs.translate === 'none' && cs.animationName === 'none'; };
   const skip = el => el.closest('#bp-hero, [class*="marquee"], [class*="embla"]');
+  const SVG = 'http://www.w3.org/2000/svg';
 
-  function hero() {
-    const box = document.querySelector('#bp-hero .bph-box');
-    if (!box) return;
-    const tl = gsap.timeline({ scrollTrigger: { trigger: '#bp-hero', start: 'top top', end: 'bottom top', scrub: .6 } });
-    tl.to(box, { scale: .95, transformOrigin: '50% 0%', ease: 'none' }, 0)
-      .to('#bp-hero .bph-copy', { y: -90, opacity: .35, ease: 'none' }, 0)
-      .to('#bp-hero .bph-panel', { y: -40, ease: 'none' }, 0)
-      .to('#bp-hero .bph-tiles', { yPercent: 12, ease: 'none' }, 0)
-      .to('#bp-hero .bph-features', { y: -30, ease: 'none' }, 0);
-    // tiles lean towards the mouse
-    const tiles = box.querySelector('.bph-tiles');
-    if (tiles) {
-      const qx = gsap.quickTo(tiles, 'x', { duration: 1.2, ease: 'power3' });
-      const qy = gsap.quickTo(tiles, 'y', { duration: 1.2, ease: 'power3' });
-      box.addEventListener('pointermove', e => {
-        const r = box.getBoundingClientRect();
-        qx(((e.clientX - r.left) / r.width - .5) * -24);
-        qy(((e.clientY - r.top) / r.height - .5) * -16);
-      });
-      box.addEventListener('pointerleave', () => { qx(0); qy(0); });
-    }
-    gsap.to('#bp-hero .bph-orb-wrap', { y: -8, duration: 2.6, ease: 'sine.inOut', yoyo: true, repeat: -1 });
-  }
-
-  function moonSections() {
-    for (const el of $$('[data-bp-stars]')) {
-      if (el.tagName === 'FOOTER' || !below(el)) continue;
-      gsap.fromTo(el, { clipPath: 'circle(22% at 50% 18%)' }, {
-        clipPath: 'circle(150% at 50% 18%)', ease: 'power1.in',
-        scrollTrigger: { trigger: el, start: 'top bottom', end: 'top 35%', scrub: .5 },
-      });
-    }
-  }
-
-  function beams() {
-    for (const el of $$('main .bg-white.rounded-2xl.py-16')) {
-      gsap.fromTo(el, { '--bp-beam': '-15%' }, {
-        '--bp-beam': '115%', ease: 'none',
-        scrollTrigger: { trigger: el, start: 'top bottom', end: 'bottom top', scrub: true },
+  function ripples() {
+    const svg = document.createElementNS(SVG, 'svg');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+    document.body.appendChild(svg);
+    let n = 0;
+    for (const h of $$('main h1, main h2')) {
+      if (skip(h) || !below(h) || getComputedStyle(h).filter !== 'none') continue;
+      const id = 'bp-ripple-' + n++;
+      gsap.set(h, { autoAlpha: 0 });
+      ScrollTrigger.create({
+        trigger: h, start: 'top 88%', once: true,
+        onEnter() {
+          // one filter per heading, so each ripple calms on its own
+          const f = document.createElementNS(SVG, 'filter');
+          f.id = id;
+          f.setAttribute('x', '-10%'); f.setAttribute('y', '-30%');
+          f.setAttribute('width', '120%'); f.setAttribute('height', '160%');
+          f.innerHTML = `<feTurbulence type="fractalNoise" baseFrequency="0.008 0.05" numOctaves="2" seed="${n}" result="n"/>` +
+            '<feDisplacementMap in="SourceGraphic" in2="n" scale="45" xChannelSelector="R" yChannelSelector="G"/>';
+          svg.appendChild(f);
+          const turb = f.firstChild, disp = f.lastChild, st = { s: 45, fy: .05 };
+          h.style.filter = `url(#${id})`;
+          gsap.timeline({ onComplete() { h.style.removeProperty('filter'); f.remove(); } })
+            .to(h, { autoAlpha: 1, duration: .6, ease: 'power1.out', clearProps: 'opacity,visibility' }, 0)
+            .to(st, {
+              s: 0, fy: .01, duration: 1.8, ease: 'power2.out',
+              onUpdate() { disp.setAttribute('scale', st.s.toFixed(1)); turb.setAttribute('baseFrequency', `0.008 ${st.fy.toFixed(4)}`); },
+            }, 0);
+        },
       });
     }
   }
 
-  function velocity() {
-    const imgs = $$('main img').filter(img => !skip(img) && img.getBoundingClientRect().width >= 200 && free(img));
-    const setters = imgs.map(img => gsap.quickSetter(img, 'skewY', 'deg'));
-    const marquees = () => $$('[class*="marquee"] *').flatMap(el => el.getAnimations());
-    const proxy = { skew: 0, rate: 1 };
-    const apply = () => {
-      for (const s of setters) s(proxy.skew);
-      for (const a of marquees()) a.playbackRate = proxy.rate;
-    };
-    imgs.forEach(img => gsap.set(img, { transformOrigin: '50% 50%', force3D: true }));
-    ScrollTrigger.create({
-      onUpdate: self => {
-        const v = self.getVelocity();
-        const skew = gsap.utils.clamp(-4, 4, v / -400);
-        const rate = 1 + Math.min(4, Math.abs(v) / 500);
-        if (Math.abs(skew) > Math.abs(proxy.skew) || rate > proxy.rate) {
-          proxy.skew = skew;
-          proxy.rate = rate;
-          gsap.to(proxy, { skew: 0, rate: 1, duration: .8, ease: 'power3', overwrite: true, onUpdate: apply });
-        }
-      },
+  const CARDS = 'main .rounded-2xl.bg-white:not(.py-16), main .rounded-3xl.bg-white, main .rounded-2xl[class*="bg-gradient"], main .rounded-xl.bg-white';
+  function surface() {
+    const cards = $$(CARDS).filter(c => !skip(c) && below(c) && free(c) && !c.parentElement.closest(CARDS));
+    if (!cards.length) return;
+    gsap.set(cards, { y: 70, scale: .96, autoAlpha: 0, filter: 'blur(8px)' });
+    ScrollTrigger.batch(cards, {
+      start: 'top 92%', once: true,
+      onEnter: batch => gsap.to(batch, {
+        y: 0, scale: 1, autoAlpha: 1, filter: 'blur(0px)', duration: 1.1, ease: 'sine.out', stagger: .12,
+        clearProps: 'transform,opacity,visibility,filter',
+      }),
     });
   }
 
-  function icons() {
-    const els = $$('main img, main svg').filter(el => {
-      if (skip(el) || el.closest('a, button') || !below(el)) return false;
+  function bob() {
+    $$('[class*="marquee"] img, [class*="marquee"] svg').forEach((el, i) => {
       const r = el.getBoundingClientRect();
-      return r.width >= 20 && r.width <= 90 && r.height <= 90 && free(el);
-    });
-    if (!els.length) return;
-    gsap.set(els, { scale: 0, rotation: -120, autoAlpha: 0 });
-    ScrollTrigger.batch(els, {
-      start: 'top 90%', once: true,
-      onEnter: batch => gsap.to(batch, { scale: 1, rotation: 0, autoAlpha: 1, duration: .9, ease: 'back.out(2)', stagger: .08, clearProps: 'transform,opacity,visibility' }),
+      if (!r.width || r.width > 220 || !free(el)) return;
+      gsap.to(el, { y: -5, duration: 1.6, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: (i % 8) * .2 });
     });
   }
 
-  function footer() {
-    const els = $$('footer a, footer h2, footer h3, footer h4').filter(el => below(el) && free(el));
-    if (!els.length) return;
-    gsap.set(els, { y: 24, autoAlpha: 0 });
-    ScrollTrigger.batch(els, {
-      start: 'top 95%', once: true,
-      onEnter: batch => gsap.to(batch, { y: 0, autoAlpha: 1, duration: .7, ease: 'power3.out', stagger: .03, clearProps: 'transform,opacity,visibility' }),
+  function depth() {
+    const main = document.querySelector('main');
+    if (!main) return;
+    gsap.fromTo(main, { '--color-secondary-light-ivory': 'rgb(247,250,249)' }, {
+      '--color-secondary-light-ivory': 'rgb(229,241,239)', ease: 'none',
+      scrollTrigger: { trigger: main, start: 'top top', end: 'bottom bottom', scrub: true },
     });
   }
 
@@ -115,12 +89,10 @@
     // The page scrolls inside #page-scroller, not the window.
     const sc = document.getElementById('page-scroller');
     if (sc) ScrollTrigger.defaults({ scroller: sc });
-    hero();
-    moonSections();
-    beams();
-    velocity();
-    icons();
-    footer();
+    ripples();
+    surface();
+    bob();
+    depth();
     ScrollTrigger.refresh();
   }
   // theme.js starts at load + 600ms; this goes after it
