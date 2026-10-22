@@ -1,10 +1,9 @@
 // Scroll-driven motion for version 5 on GSAP + ScrollTrigger (served by
 // server.js from node_modules), on top of theme.js:
-//  - headings come in seen through water: an SVG ripple distorts them and
-//    calms down until they are still;
+//  - headings come in rippled (an SVG distortion) and calm down until still;
 //  - cards surface one after another, rising and coming into focus;
 //  - logos in the marquees bob like they are floating;
-//  - the page background deepens from pearl towards sea glass as you scroll down.
+//  - the page background takes on a faint lime tint as you scroll down.
 // It only animates elements that have no transform of their own and starts
 // after theme.js, so the two layers never fight over the same property.
 (function () {
@@ -76,8 +75,8 @@
   function depth() {
     const main = document.querySelector('main');
     if (!main) return;
-    gsap.fromTo(main, { '--color-secondary-light-ivory': 'rgb(247,250,249)' }, {
-      '--color-secondary-light-ivory': 'rgb(229,241,239)', ease: 'none',
+    gsap.fromTo(main, { '--color-secondary-light-ivory': 'rgb(247,247,244)' }, {
+      '--color-secondary-light-ivory': 'rgb(238,241,229)', ease: 'none',
       scrollTrigger: { trigger: main, start: 'top top', end: 'bottom bottom', scrub: true },
     });
   }

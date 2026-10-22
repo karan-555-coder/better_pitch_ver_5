@@ -1,10 +1,10 @@
-# BetterPitch website — version 5 (Deep Teal & Pearl)
+# BetterPitch website — version 5 (Charcoal & Electric Lime)
 
 The BetterPitch marketing site (AI voice agents that call, qualify and follow
 up), built on a working local copy of https://www.artisan.co. The original
 site was recorded in Chrome and is replayed with its original URLs, so the
 Next.js JavaScript, animations, menus and images all work. BetterPitch copy,
-the voice-demo hero, a deep teal & pearl colour theme and extra motion are layered
+the voice-demo hero, a charcoal & electric lime colour theme and extra motion are layered
 on top without editing the recorded files.
 
 Each version is a colour variant of the same site in its own repo:
@@ -28,11 +28,12 @@ again. Changes to files in `betterpitch/` only need a page refresh
 |---|---|---|
 | Copy | `betterpitch/content.js` | Swaps the recorded text for BetterPitch copy after React hydrates |
 | Hero | `betterpitch/hero.js`, `hero.css` | Adds the voice-demo hero as the first section of the home page |
-| Colours | `recolor()` in `server.js` | Moves every purple/violet/magenta colour (hue 240-335) in CSS, HTML, JS, SVG and RSC data to teal: dark and mid shades become deep teal and peacock, light ones pearl (alpha kept); ivory backgrounds become pearl white, and the amber/pink stops of the heading gradient become aqua and sea-glass teal |
-| Images | `recolor-images.js` -> `archive/recolored/` | Same purple-to-teal/pearl mapping on the pixels of the WebP/PNG/JPEG images; `server.js` serves the recoloured copy when one exists |
-| Motion | `betterpitch/theme.css`, `theme.js`, `hero.css` | Hero with caustic water light, a drifting water-surface line and a turning pearl ring on the play orb; caustic light over dark sections; sections rising into view behind a wave like the tide; images opening out of a pearl; pearl sheen on the teal buttons; gradient edges on the big white panels |
-| GSAP motion | `betterpitch/motion.js` (GSAP + ScrollTrigger from `node_modules`) | Headings come in seen through water (an SVG ripple that calms until still), cards surface one after another, marquee logos bob as if floating, the page background deepens from pearl to sea glass as you scroll |
+| Colours | `recolor()` in `server.js` | Moves every purple/violet/magenta colour (hue 240-335) in CSS, HTML, JS, SVG and RSC data to lime: vivid mid shades become electric lime, dark and muted ones charcoal, light ones a pale lime cream (alpha kept); ivory backgrounds become a soft grey-white, and the amber/pink stops of the heading gradient become bright lime and deep olive |
+| Images | `recolor-images.js` -> `archive/recolored/` | Same purple-to-charcoal/lime mapping on the pixels of the WebP/PNG/JPEG images; `server.js` serves the recoloured copy when one exists |
+| Motion | `betterpitch/theme.css`, `theme.js`, `hero.css` | Hero with soft lime light drifting over charcoal, a moving wave line and a turning lime ring on the play orb; lime light over dark sections; sections rising into view behind a wave; images opening out of a small oval; lime sheen on the charcoal buttons; gradient edges on the big white panels |
+| GSAP motion | `betterpitch/motion.js` (GSAP + ScrollTrigger from `node_modules`) | Headings come in rippled (an SVG distortion) and calm down until still, cards surface one after another, marquee logos bob, the page background takes on a faint lime tint as you scroll |
 | Interactions | `betterpitch/interact.js` | Nav links and buttons decode their label on hover (letters scramble and lock in), arrow icons turn to point at the cursor, elastic strings along the section edges can be pulled and vibrate when let go, card corners peel up as the cursor nears them, images go liquid under a fast-moving cursor, outline buttons fill from the side the cursor came in and drain out the side it left |
+| Gen Z layer | `betterpitch/genz.js` | Film grain drifting over the page, headings glitch (lime/cyan RGB split) and get a hand-drawn lime scribble under them on hover, neo-brutalist cards hop onto a hard lime block shadow, CTAs stream emoji reactions while hovered, pills and badges wiggle like stickers |
 
 Colour replacements in HTML and RSC payloads keep the exact byte length:
 Next.js embeds length-prefixed RSC rows, and a mismatch breaks hydration.
@@ -64,7 +65,7 @@ are `overflow: hidden`), so the scripts scroll that element (`scroller.js`).
 ## Files
 
 - `server.js` – replays `archive/` on localhost, injects the `betterpitch/` layers and recolours on the fly
-- `betterpitch/` – BetterPitch copy, hero, theme and motion (`motion.js` and `interact.js` use GSAP, installed by `npm install`)
+- `betterpitch/` – BetterPitch copy, hero, theme and motion (`motion.js`, `interact.js` and `genz.js` use GSAP, installed by `npm install`)
 - `recolor-images.js` – recolours purple in the archived images
 - `capture.js` – records the live site into `archive/` (headless Chrome)
 - `verify.js` / `compare.js` – check the local copy page by page / against the live site

@@ -134,7 +134,7 @@
         ctx.beginPath();
         ctx.moveTo(x1, y);
         ctx.quadraticCurveTo(px, y + s.disp * 2, x2, y);
-        ctx.strokeStyle = `rgba(32,138,145,${.28 + k * .5})`;
+        ctx.strokeStyle = `rgba(101,140,20,${.3 + k * .5})`;
         ctx.lineWidth = 1.2 + k;
         ctx.stroke();
       }

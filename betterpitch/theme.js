@@ -1,8 +1,8 @@
 // Site-wide state for version 5 (styles in theme.css), injected into every
 // HTML page by server.js:
-//  - caustic light ripples over dark sections;
+//  - soft lime light drifts over dark sections;
 //  - sections rise into view behind a wave, like the tide coming in;
-//  - images open out of a pearl.
+//  - images open out of a small oval.
 // GSAP motion lives in motion.js and pointer interactions in interact.js.
 // Like content.js it waits for React to hydrate, and it only sets data
 // attributes and custom properties, removing the entrance ones once they have
