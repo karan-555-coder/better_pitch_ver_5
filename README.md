@@ -27,7 +27,7 @@ again. Changes to files in `betterpitch/` only need a page refresh
 | Hero | `betterpitch/hero.js`, `hero.css` | Adds the voice-demo hero as the first section of the home page |
 | Colours | `recolor()` in `server.js` | Moves every purple/violet/magenta colour (hue 240-335) in CSS, HTML, JS, SVG and RSC data to crimson/rose (hue 338-354), keeping lightness, saturation and alpha; ivory backgrounds become a light blush |
 | Images | `recolor-images.js` -> `archive/recolored/` | Same purple-to-rose shift on the pixels of the WebP/PNG/JPEG images; `server.js` serves the recoloured copy when one exists |
-| Motion | `betterpitch/theme.css`, `theme.js` | Dot-grid background with a rose spotlight that follows the mouse, headings that rise in word by word, flowing colour in gradient headings, 3D tilt + glare on cards, a light running round the rose buttons' border, gradient edges on the big white panels |
+| Motion | `betterpitch/theme.css`, `theme.js` | Dot-grid background with a rose spotlight that follows the mouse, headings that rise in word by word, flowing colour in gradient headings, 3D tilt + glare on cards with bouncing icons, a light running round the rose buttons' border, magnetic buttons, a scroll progress bar, bottom-up image reveals, nav link underlines, gradient edges on the big white panels |
 
 Colour replacements in HTML and RSC payloads keep the exact byte length:
 Next.js embeds length-prefixed RSC rows, and a mismatch breaks hydration.

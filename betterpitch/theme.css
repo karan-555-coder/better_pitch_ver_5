@@ -1,8 +1,9 @@
 /* Site-wide BetterPitch look (version 2, rose/crimson), loaded on every page by
    server.js: a dot grid with a rose spotlight that follows the mouse, headings
    that rise in word by word (theme.js), flowing colour in gradient headings,
-   3D tilt on cards and a light running round the rose buttons' border. Colours
-   and motion only: nothing here changes layout. */
+   3D tilt on cards, a light running round the rose buttons' border, magnetic
+   buttons, a scroll progress bar, bottom-up image reveals, nav underlines and
+   bouncing card icons. Colours and motion only: nothing here changes layout. */
 
 /* dot grid + mouse spotlight (theme.js keeps --bp-mx/--bp-my on <html>); the
    same fixed-position image on every blush layer, so nested ones line up */
@@ -48,8 +49,35 @@ a.bg-primary-800::before,button.bg-primary-800::before{content:"";position:absol
   animation:bpSpin 2.8s linear infinite}
 @keyframes bpSpin{to{--bp-ang:360deg}}
 
+/* scroll progress bar along the top (element added by theme.js) */
+.bp-progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:2147483000;pointer-events:none;
+  transform-origin:0 50%;transform:scaleX(var(--bp-progress,0));
+  background:linear-gradient(90deg,#9f1239,#e11d48,#fb7185,#fda4af);box-shadow:0 0 10px rgba(225,29,72,.5)}
+
+/* rose buttons lean towards the mouse */
+[data-bp-magnet]{translate:var(--bp-tx,0) var(--bp-ty,0);transition:translate .35s cubic-bezier(.2,.75,.2,1.4)}
+[data-bp-magnet]:hover{transition:translate .1s linear}
+
+/* large images uncover bottom-up as they scroll in */
+[data-bp-img]{transition:clip-path 1s cubic-bezier(.65,.05,.25,1),scale 1.2s cubic-bezier(.2,.75,.2,1)}
+[data-bp-img="wait"]{clip-path:inset(100% 0 0 0 round 16px);scale:1.04}
+[data-bp-img="in"]{clip-path:inset(0 0 0 0 round 0);scale:1}
+
+/* rose underline sliding in under the top menu links */
+nav a:not(.rounded-xl):not(.rounded-full),nav button:not(.rounded-xl):not(.rounded-full){
+  background-image:linear-gradient(90deg,#e11d48,#fb7185);background-repeat:no-repeat;
+  background-position:0 100%;background-size:0% 2px;transition:background-size .3s ease}
+nav a:not(.rounded-xl):not(.rounded-full):hover,nav button:not(.rounded-xl):not(.rounded-full):hover{background-size:100% 2px}
+
+/* small card icons bounce on hover */
+[data-bp-tilt]:hover [data-bp-icon]{animation:bpWiggle .7s cubic-bezier(.3,.7,.4,1.5)}
+@keyframes bpWiggle{0%{rotate:0deg;scale:1}30%{rotate:-10deg;scale:1.15}60%{rotate:7deg;scale:1.08}100%{rotate:0deg;scale:1}}
+
 @media (prefers-reduced-motion:reduce){
   .bp-w{opacity:1;translate:none;filter:none;transition:none}
+  [data-bp-img]{clip-path:none;scale:none;transition:none}
+  [data-bp-magnet]{translate:none}
+  [data-bp-tilt]:hover [data-bp-icon]{animation:none}
   [data-bp-flow],a.bg-primary-800::before,button.bg-primary-800::before{animation:none}
   [data-bp-tilt]{transform:none}
 }

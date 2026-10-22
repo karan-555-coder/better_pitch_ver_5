@@ -105,8 +105,9 @@ function toTheme(r, g, b) {
   return rgbOf(338 + (h - 240) * .17, s, l);
 }
 const hex2 = n => n.toString(16).padStart(2, '0');
-// Fixed swaps: the ivory page backgrounds get a light rose (blush) tint.
-const FIXED = { fbf9f7: 'fff8f9', f4f0ec: 'fbeef1', f5f1ed: 'fcf0f2', f8f5f3: 'fdf5f6' };
+// Fixed swaps: the ivory page backgrounds get a light rose (blush) tint, and the
+// amber stop in the heading/glow gradients becomes a light rose.
+const FIXED = { fbf9f7: 'fff8f9', f4f0ec: 'fbeef1', f5f1ed: 'fcf0f2', f8f5f3: 'fdf5f6', f2c677: 'f9a8b8' };
 
 function recolor(s, type) {
   const exactLength = /text\/html|x-component/.test(type);

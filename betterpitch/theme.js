@@ -5,7 +5,9 @@
 //    their original text nodes, so React and content.js still own them;
 //    gradient-text headings get flowing colour instead (splitting would break
 //    their background-clip);
-//  - cards tilt in 3D towards the mouse.
+//  - cards tilt in 3D towards the mouse, and their small icons bounce;
+//  - rose buttons lean towards the mouse, a progress bar tracks scrolling and
+//    large images uncover bottom-up as they scroll in.
 // Like content.js it waits for React to hydrate, and it only sets data
 // attributes and custom properties, never class names.
 (function () {
@@ -119,18 +121,96 @@
     }
   }
 
+  // The page scrolls inside #page-scroller, not the window.
+  function progress() {
+    const bar = document.createElement('div');
+    bar.className = 'bp-progress';
+    bar.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(bar);
+    const sc = document.getElementById('page-scroller') || document.scrollingElement;
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const max = sc.scrollHeight - sc.clientHeight;
+      bar.style.setProperty('--bp-progress', max > 0 ? (sc.scrollTop / max).toFixed(4) : 0);
+    };
+    (sc === document.scrollingElement ? window : sc).addEventListener('scroll', () => {
+      if (!ticking) { ticking = true; requestAnimationFrame(update); }
+    }, { passive: true });
+    update();
+  }
+
+  function magnets() {
+    for (const b of document.querySelectorAll('a.bg-primary-800, button.bg-primary-800')) {
+      if (b.dataset.bpMagnet !== undefined) continue;
+      // buttons with their own translate (e.g. Tailwind hover shifts) are left alone
+      if (getComputedStyle(b).translate !== 'none') continue;
+      b.dataset.bpMagnet = '';
+      b.addEventListener('pointermove', e => {
+        const r = b.getBoundingClientRect();
+        b.style.setProperty('--bp-tx', ((e.clientX - r.left - r.width / 2) * .18).toFixed(1) + 'px');
+        b.style.setProperty('--bp-ty', ((e.clientY - r.top - r.height / 2) * .3).toFixed(1) + 'px');
+      });
+      b.addEventListener('pointerleave', () => {
+        b.style.setProperty('--bp-tx', '0px');
+        b.style.setProperty('--bp-ty', '0px');
+      });
+    }
+  }
+
+  // Images in sliders/overlapping layers may never count as "on screen"
+  // themselves, so each image is revealed when its section scrolls in.
+  // Images in moving strips (marquees) are skipped.
+  function images() {
+    const bySection = new Map();
+    const io = new IntersectionObserver(entries => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        io.unobserve(e.target);
+        for (const img of bySection.get(e.target) || []) {
+          img.dataset.bpImg = 'in';
+          setTimeout(() => img.removeAttribute('data-bp-img'), 1400);
+        }
+      }
+    }, { threshold: 0, rootMargin: '0px 0px -25% 0px' });
+    const vh = innerHeight;
+    for (const img of document.querySelectorAll('main section img')) {
+      const r = img.getBoundingClientRect();
+      if (r.width < 300 || r.top < vh || img.closest('#bp-hero, [class*="marquee"]')) continue;
+      const cs = getComputedStyle(img);
+      if (cs.clipPath !== 'none' || cs.position === 'absolute' || cs.position === 'fixed') continue;
+      const sec = img.closest('section');
+      if (!bySection.has(sec)) { bySection.set(sec, []); io.observe(sec); }
+      bySection.get(sec).push(img);
+      img.dataset.bpImg = 'wait';
+    }
+  }
+
+  function icons() {
+    for (const card of document.querySelectorAll('[data-bp-tilt]')) {
+      for (const el of card.querySelectorAll('img, svg')) {
+        if (el.dataset.bpIcon !== undefined) continue;
+        const r = el.getBoundingClientRect();
+        if (r.width && r.width <= 64 && r.height <= 64) el.dataset.bpIcon = '';
+      }
+    }
+  }
+
   let started = false;
   function start() {
     if (started) return;
     started = true;
     headings();
     if (reduced) return;
-    cards();
+    progress();
+    images();
+    const live = () => { cards(); magnets(); icons(); };
+    live();
     let pending = false;
     new MutationObserver(() => {
       if (pending) return;
       pending = true;
-      requestAnimationFrame(() => { pending = false; cards(); });
+      requestAnimationFrame(() => { pending = false; live(); });
     }).observe(document.querySelector('main') || document.body, { childList: true, subtree: true });
   }
   window.addEventListener('load', () => setTimeout(start, 600));
