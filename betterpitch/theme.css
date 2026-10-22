@@ -2,8 +2,10 @@
    server.js: a dot grid with a rose spotlight that follows the mouse, headings
    that rise in word by word (theme.js), flowing colour in gradient headings,
    3D tilt on cards, a light running round the rose buttons' border, magnetic
-   buttons, a scroll progress bar, bottom-up image reveals, nav underlines and
-   bouncing card icons. Colours and motion only: nothing here changes layout. */
+   buttons, a scroll progress bar, bottom-up image reveals, nav underlines,
+   floating/bouncing card icons, a rose cursor, click ripples, cards popping in,
+   paragraphs sharpening in and arrow nudges. Colours and motion only: nothing
+   here changes layout. */
 
 /* dot grid + mouse spotlight (theme.js keeps --bp-mx/--bp-my on <html>); the
    same fixed-position image on every blush layer, so nested ones line up */
@@ -69,15 +71,47 @@ nav a:not(.rounded-xl):not(.rounded-full),nav button:not(.rounded-xl):not(.round
   background-position:0 100%;background-size:0% 2px;transition:background-size .3s ease}
 nav a:not(.rounded-xl):not(.rounded-full):hover,nav button:not(.rounded-xl):not(.rounded-full):hover{background-size:100% 2px}
 
-/* small card icons bounce on hover */
+/* small card icons float gently, and bounce on hover */
+img[data-bp-icon]{animation:bpBob 3.6s ease-in-out infinite;animation-delay:var(--bp-bd,0s)}
+@keyframes bpBob{0%,100%{translate:0 0}50%{translate:0 -5px}}
 [data-bp-tilt]:hover [data-bp-icon]{animation:bpWiggle .7s cubic-bezier(.3,.7,.4,1.5)}
+
+/* rose cursor: a dot plus a trailing ring that grows over things you can click
+   (elements added by theme.js; the normal cursor stays) */
+.bp-cursor,.bp-cursor-ring{position:fixed;top:0;left:0;z-index:2147483001;pointer-events:none;border-radius:50%;
+  translate:var(--cx,-200px) var(--cy,-200px);transition:opacity .3s}
+.bp-cursor{width:8px;height:8px;margin:-4px 0 0 -4px;background:#e11d48;box-shadow:0 0 10px rgba(225,29,72,.6)}
+.bp-cursor-ring{width:34px;height:34px;margin:-17px 0 0 -17px;border:1.5px solid rgba(225,29,72,.45);
+  transition:width .25s,height .25s,margin .25s,background-color .25s,border-color .25s,opacity .3s}
+.bp-cursor-ring.on{width:58px;height:58px;margin:-29px 0 0 -29px;background:rgba(251,113,133,.12);border-color:rgba(225,29,72,.25)}
+.bp-cursor.off,.bp-cursor-ring.off{opacity:0}
+@media (hover:none),(pointer:coarse){.bp-cursor,.bp-cursor-ring{display:none}}
+
+/* click ripple (theme.js adds a clipped box with the ripple inside, then removes it) */
+.bp-ripple-box{position:absolute;inset:0;overflow:hidden;border-radius:inherit;pointer-events:none;z-index:1}
+.bp-ripple{position:absolute;left:var(--x);top:var(--y);width:var(--d);height:var(--d);margin:calc(var(--d) / -2) 0 0 calc(var(--d) / -2);
+  border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.55),rgba(251,113,133,.3) 55%,transparent 70%);
+  scale:0;animation:bpRipple .65s ease-out forwards}
+@keyframes bpRipple{to{scale:1;opacity:0}}
+
+/* cards pop in one after another; paragraphs sharpen in */
+[data-bp-pop]{transition:opacity .6s ease,translate .7s cubic-bezier(.2,.75,.2,1),scale .7s cubic-bezier(.2,.75,.2,1);transition-delay:var(--bp-pd,0s)}
+[data-bp-pop="wait"]{opacity:0;translate:0 40px;scale:.94}
+[data-bp-fade]{transition:opacity .7s ease,translate .7s ease,filter .7s ease;transition-delay:var(--bp-pd,0s)}
+[data-bp-fade="wait"]{opacity:0;translate:0 16px;filter:blur(5px)}
+
+/* arrows in buttons nudge forward on hover */
+a.rounded-xl svg:last-child,button.rounded-xl svg:last-child,a.rounded-full svg:last-child,button.rounded-full svg:last-child{transition:translate .3s cubic-bezier(.2,.75,.2,1.6)}
+a.rounded-xl:hover svg:last-child,button.rounded-xl:hover svg:last-child,a.rounded-full:hover svg:last-child,button.rounded-full:hover svg:last-child{translate:4px 0}
 @keyframes bpWiggle{0%{rotate:0deg;scale:1}30%{rotate:-10deg;scale:1.15}60%{rotate:7deg;scale:1.08}100%{rotate:0deg;scale:1}}
 
 @media (prefers-reduced-motion:reduce){
   .bp-w{opacity:1;translate:none;filter:none;transition:none}
   [data-bp-img]{clip-path:none;scale:none;transition:none}
   [data-bp-magnet]{translate:none}
-  [data-bp-tilt]:hover [data-bp-icon]{animation:none}
+  [data-bp-tilt]:hover [data-bp-icon],img[data-bp-icon]{animation:none}
+  [data-bp-pop],[data-bp-fade]{opacity:1;translate:none;scale:none;filter:none;transition:none}
+  .bp-cursor,.bp-cursor-ring,.bp-ripple{display:none}
   [data-bp-flow],a.bg-primary-800::before,button.bg-primary-800::before{animation:none}
   [data-bp-tilt]{transform:none}
 }

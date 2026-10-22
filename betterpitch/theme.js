@@ -7,7 +7,9 @@
 //    their background-clip);
 //  - cards tilt in 3D towards the mouse, and their small icons bounce;
 //  - rose buttons lean towards the mouse, a progress bar tracks scrolling and
-//    large images uncover bottom-up as they scroll in.
+//    large images uncover bottom-up as they scroll in;
+//  - a rose cursor dot + trailing ring, click ripples, cards popping in and
+//    paragraphs sharpening in as they scroll into view.
 // Like content.js it waits for React to hydrate, and it only sets data
 // attributes and custom properties, never class names.
 (function () {
@@ -191,8 +193,98 @@
       for (const el of card.querySelectorAll('img, svg')) {
         if (el.dataset.bpIcon !== undefined) continue;
         const r = el.getBoundingClientRect();
-        if (r.width && r.width <= 64 && r.height <= 64) el.dataset.bpIcon = '';
+        if (r.width && r.width <= 64 && r.height <= 64) {
+          el.dataset.bpIcon = '';
+          el.style.setProperty('--bp-bd', -(Math.random() * 3.6).toFixed(2) + 's');
+        }
       }
+    }
+  }
+
+  // Rose dot on the pointer plus a ring that eases after it.
+  function cursor() {
+    if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    const dot = document.createElement('div'), ring = document.createElement('div');
+    dot.className = 'bp-cursor off';
+    ring.className = 'bp-cursor-ring off';
+    dot.setAttribute('aria-hidden', 'true');
+    ring.setAttribute('aria-hidden', 'true');
+    document.body.append(dot, ring);
+    let x = -200, y = -200, rx = x, ry = y, running = false;
+    const CLICKABLE = 'a, button, [role="button"], input, label, [data-bp-tilt]';
+    const frame = () => {
+      rx += (x - rx) * .18; ry += (y - ry) * .18;
+      ring.style.setProperty('--cx', rx.toFixed(1) + 'px');
+      ring.style.setProperty('--cy', ry.toFixed(1) + 'px');
+      if (Math.abs(x - rx) + Math.abs(y - ry) > .5) requestAnimationFrame(frame); else running = false;
+    };
+    addEventListener('pointermove', e => {
+      x = e.clientX; y = e.clientY;
+      dot.style.setProperty('--cx', x + 'px');
+      dot.style.setProperty('--cy', y + 'px');
+      dot.classList.remove('off'); ring.classList.remove('off');
+      ring.classList.toggle('on', !!(e.target.closest && e.target.closest(CLICKABLE)));
+      if (!running) { running = true; requestAnimationFrame(frame); }
+    }, { passive: true });
+    // hide when the pointer leaves the page or goes into the chat iframe
+    document.addEventListener('pointerout', e => {
+      if (!e.relatedTarget) { dot.classList.add('off'); ring.classList.add('off'); }
+    });
+  }
+
+  // Ripple from the click point on buttons and cards that are already
+  // positioned (so the ripple box never changes how they lay out).
+  function ripples() {
+    document.addEventListener('pointerdown', e => {
+      const host = e.target.closest && e.target.closest('main a, main button, nav a, nav button, [data-bp-tilt]');
+      if (!host || getComputedStyle(host).position === 'static' && host.dataset.bpTilt === undefined) return;
+      const r = host.getBoundingClientRect();
+      const box = document.createElement('span');
+      box.className = 'bp-ripple-box';
+      box.setAttribute('aria-hidden', 'true');
+      const dot = document.createElement('span');
+      dot.className = 'bp-ripple';
+      dot.style.setProperty('--x', (e.clientX - r.left) + 'px');
+      dot.style.setProperty('--y', (e.clientY - r.top) + 'px');
+      dot.style.setProperty('--d', Math.max(r.width, r.height) * 2.2 + 'px');
+      box.appendChild(dot);
+      host.appendChild(box);
+      setTimeout(() => box.remove(), 700);
+    }, { passive: true });
+  }
+
+  // Cards pop in and paragraphs sharpen in as they scroll into view; things
+  // already on screen are left as they are.
+  function pops() {
+    const io = new IntersectionObserver(entries => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        const el = e.target;
+        io.unobserve(el);
+        const key = el.dataset.bpPop !== undefined ? 'data-bp-pop' : 'data-bp-fade';
+        el.setAttribute(key, 'in');
+        setTimeout(() => { el.removeAttribute(key); el.style.removeProperty('--bp-pd'); }, 1500);
+      }
+    }, { threshold: 0, rootMargin: '0px 0px -10% 0px' });
+    const vh = innerHeight;
+    const seen = new Map();
+    const below = el => { const r = el.getBoundingClientRect(); return r.height && r.top >= vh; };
+    const stagger = el => {
+      const n = seen.get(el.parentNode) || 0;
+      seen.set(el.parentNode, n + 1);
+      if (n) el.style.setProperty('--bp-pd', Math.min(n, 5) * .1 + 's');
+    };
+    for (const c of document.querySelectorAll('[data-bp-tilt]')) {
+      if (!below(c) || c.parentElement.closest('[data-bp-pop]')) continue;
+      stagger(c);
+      c.dataset.bpPop = 'wait';
+      io.observe(c);
+    }
+    for (const p of document.querySelectorAll('main section p')) {
+      if (p.textContent.trim().length < 40 || !below(p) || p.closest('#bp-hero, [data-bp-pop]')) continue;
+      stagger(p);
+      p.dataset.bpFade = 'wait';
+      io.observe(p);
     }
   }
 
@@ -204,8 +296,11 @@
     if (reduced) return;
     progress();
     images();
+    cursor();
+    ripples();
     const live = () => { cards(); magnets(); icons(); };
     live();
+    pops();
     let pending = false;
     new MutationObserver(() => {
       if (pending) return;
