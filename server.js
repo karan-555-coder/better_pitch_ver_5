@@ -81,11 +81,12 @@ function rewrite(body) {
   return s;
 }
 
-// BetterPitch palette (version 3, black & gold): every purple/violet/magenta
-// colour in the recorded files (hue 240-335) is moved to gold (hue 40-46); dark
-// ones also lose most of their saturation and lightness so they read as warm
-// near-black, and mid/light ones become champagne gold. Alpha is kept, so only
-// colours change. HTML and RSC payloads
+// BetterPitch palette (version 4, midnight navy & silver): every
+// purple/violet/magenta colour in the recorded files (hue 240-335) is moved to
+// blue (hue 218-223). Dark and mid shades become deep navy and sapphire (low
+// saturation ones are lifted so they still read as navy); light ones turn into
+// icy silver with only a hint of blue. Alpha is kept, so only colours change.
+// HTML and RSC payloads
 // must keep their byte length (see above), so there a replacement that would be
 // longer is skipped and a shorter one is padded with spaces.
 function hslOf(r, g, b) {
@@ -103,15 +104,16 @@ function rgbOf(h, s, l) {
 function toTheme(r, g, b) {
   const [h, s, l] = hslOf(r, g, b);
   if (h < 240 || h > 335 || s <= .12) return null;
-  // t blends from the near-black treatment (dark) to champagne gold (light)
-  const t = Math.min(1, Math.max(0, (l - .38) / .17));
-  return rgbOf(40 + (h - 240) * .06, s * .3 + (Math.min(s, .6) * .85 - s * .3) * t, l * .35 + (l - l * .35) * t);
+  // t blends from navy/sapphire (dark and mid) to icy silver (light)
+  const t = Math.min(1, Math.max(0, (l - .6) / .2));
+  const sd = Math.max(.35, Math.min(s, .85) * .85), sl = Math.min(s, .4) * .55;
+  return rgbOf(218 + (h - 240) * .05, sd + (sl - sd) * t, l * .85 + (l - l * .85) * t);
 }
 const hex2 = n => n.toString(16).padStart(2, '0');
-// Fixed swaps: the ivory page backgrounds become a warm ivory-white, and the
-// pink-red stop of the heading text gradient (just outside the purple hue
-// range) becomes deep gold. The amber stop already suits gold and stays.
-const FIXED = { fbf9f7: 'faf8f3', f4f0ec: 'f3eee2', f5f1ed: 'f4efe4', f8f5f3: 'f9f6ef', fc1855: 'b8923f' };
+// Fixed swaps: the ivory page backgrounds become a cool silver-white, and the
+// amber and pink-red stops of the heading text gradient (outside the purple hue
+// range) become ice silver and steel blue.
+const FIXED = { fbf9f7: 'f7f9fc', f4f0ec: 'eef2f7', f5f1ed: 'eff3f8', f8f5f3: 'f5f7fb', f2c677: 'c8d4e3', fc1855: '6f8fb8' };
 
 function recolor(s, type) {
   const exactLength = /text\/html|x-component/.test(type);

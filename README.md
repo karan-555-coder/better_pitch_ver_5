@@ -1,15 +1,16 @@
-# BetterPitch website — version 3 (Black & Gold)
+# BetterPitch website — version 4 (Midnight Navy & Silver)
 
 The BetterPitch marketing site (AI voice agents that call, qualify and follow
 up), built on a working local copy of https://www.artisan.co. The original
 site was recorded in Chrome and is replayed with its original URLs, so the
 Next.js JavaScript, animations, menus and images all work. BetterPitch copy,
-the voice-demo hero, a black & gold colour theme and extra motion are layered
+the voice-demo hero, a midnight navy & silver colour theme and extra motion are layered
 on top without editing the recorded files.
 
 Each version is a colour variant of the same site in its own repo:
 - version 1 (orange/amber): https://github.com/karan-555-coder/better-pitch-version_1
 - version 2 (rose/crimson): https://github.com/karan-555-coder/better_pitch_version_2
+- version 3 (black & gold): https://github.com/karan-555-coder/better_pitch_version_3
 
 ## Run
 
@@ -26,9 +27,9 @@ again. Changes to files in `betterpitch/` only need a page refresh
 |---|---|---|
 | Copy | `betterpitch/content.js` | Swaps the recorded text for BetterPitch copy after React hydrates |
 | Hero | `betterpitch/hero.js`, `hero.css` | Adds the voice-demo hero as the first section of the home page |
-| Colours | `recolor()` in `server.js` | Moves every purple/violet/magenta colour (hue 240-335) in CSS, HTML, JS, SVG and RSC data to gold: dark shades become warm near-black, mid/light ones champagne gold (alpha kept); ivory backgrounds become a warm ivory-white |
-| Images | `recolor-images.js` -> `archive/recolored/` | Same purple-to-black/gold mapping on the pixels of the WebP/PNG/JPEG images; `server.js` serves the recoloured copy when one exists |
-| Motion | `betterpitch/theme.css`, `theme.js` | Black-and-gold preloader curtain, parallax images, sections opening like curtains, headings tracking in with a gold line drawn under them, gold spotlight border on cards, numbers counting up, gold fill sweeping across the black buttons, frosted-glass nav with a gold hairline once scrolled, gradient edges on the big white panels |
+| Colours | `recolor()` in `server.js` | Moves every purple/violet/magenta colour (hue 240-335) in CSS, HTML, JS, SVG and RSC data to blue: dark and mid shades become deep navy and sapphire, light ones icy silver (alpha kept); ivory backgrounds become a cool silver-white, and the amber/pink stops of the heading gradient become silver and steel blue |
+| Images | `recolor-images.js` -> `archive/recolored/` | Same purple-to-navy/silver mapping on the pixels of the WebP/PNG/JPEG images; `server.js` serves the recoloured copy when one exists |
+| Motion | `betterpitch/theme.css`, `theme.js`, `hero.css` | Night-sky hero (drifting aurora, twinkling stars, a shooting star), star dust drifting over dark sections, headings rising in with a silver shine sweeping across them (again on hover), images developing out of moonlight, cards flipping up in 3D one after another, a metallic glare across cards on hover, navy buttons filling with liquid silver from the cursor, paragraphs inking in from silver, a nav that slips away while scrolling down and returns on the way up, gradient edges on the big white panels |
 
 Colour replacements in HTML and RSC payloads keep the exact byte length:
 Next.js embeds length-prefixed RSC rows, and a mismatch breaks hydration.
