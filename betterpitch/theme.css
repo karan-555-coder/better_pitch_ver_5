@@ -69,6 +69,31 @@ a.bg-primary-800:hover,button.bg-primary-800:hover{--bp-br:320px;color:#0b1430;
 nav[data-bp-away]{translate:0 -120%}
 nav[data-bp-scrolled]{box-shadow:0 1px 0 rgba(176,198,232,.5),0 14px 30px -24px rgba(10,20,48,.45)}
 
+/* interact.js: effects layer for the star trail and click bursts */
+#bp-fx{position:fixed;inset:0;pointer-events:none;z-index:2147483001;overflow:hidden}
+.bp-star{position:absolute;left:0;top:0;pointer-events:none;
+  background:radial-gradient(circle,#fff 0 22%,#c8d6ee 40%,#4f71b6 75%);
+  clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%)}
+
+/* hero headline words lift and glow silver near the mouse (--bp-glow 0..1) */
+#bp-hero .bp-w{display:inline-block;
+  color:color-mix(in srgb,#fff calc(100% - var(--bp-glow,0) * 100%),#a9c1ec);
+  text-shadow:0 0 calc(var(--bp-glow,0) * 22px) rgba(150,180,235,.85)}
+
+/* hero chips and badges can be thrown */
+[data-bp-throw]{cursor:grab;touch-action:none;user-select:none}
+[data-bp-throw]:active{cursor:grabbing}
+
+/* moon back-to-top button: the shadow disk slides off as you scroll (--bp-phase 0..1) */
+.bp-moon{position:fixed;left:22px;bottom:22px;z-index:2147483000;width:52px;height:52px;padding:0;border-radius:50%;overflow:hidden;cursor:pointer;
+  border:1px solid rgba(176,198,232,.45);background:radial-gradient(circle at 50% 35%,#1a2b55,#070b16 75%);
+  box-shadow:0 12px 30px -12px rgba(7,11,22,.7);opacity:0;scale:.6;pointer-events:none;
+  transition:opacity .4s ease,scale .45s cubic-bezier(.2,.75,.2,1.4),box-shadow .3s ease}
+.bp-moon[data-show]{opacity:1;scale:1;pointer-events:auto}
+.bp-moon:hover{box-shadow:0 0 0 6px rgba(176,198,232,.12),0 0 34px rgba(150,180,235,.6),0 12px 30px -12px rgba(7,11,22,.7);scale:1.08}
+.bp-moon::before{content:"";position:absolute;inset:13px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#c8d6ee 55%,#8ea6cc)}
+.bp-moon i{position:absolute;inset:12px;border-radius:50%;background:#0e1834;translate:calc(var(--bp-phase,.12) * 30px) 0;transition:translate .2s linear}
+
 @media (prefers-reduced-motion:reduce){
   [data-bp-stars]{animation:none}
   nav[data-bp-away]{translate:none}

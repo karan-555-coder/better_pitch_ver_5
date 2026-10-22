@@ -175,9 +175,11 @@ function send(res, entry) {
     // recorded markup and RSC payloads stay byte-identical.
     // The home page's first section is added the same way (betterpitch/hero.js).
     // Site-wide background glow and motion (betterpitch/theme.css, theme.js),
-    // plus scroll-driven motion on GSAP (betterpitch/motion.js).
+    // plus scroll-driven motion and pointer interactions on GSAP
+    // (betterpitch/motion.js, interact.js).
     body = body.replace('</head>', '<link rel="stylesheet" href="/__bp/theme.css"><script src="/__bp/content.js"></script><script src="/__bp/hero.js"></script><script src="/__bp/theme.js"></script>' +
-      '<script src="/__bp/gsap.min.js"></script><script src="/__bp/ScrollTrigger.min.js"></script><script src="/__bp/motion.js"></script></head>');
+      '<script src="/__bp/gsap.min.js"></script><script src="/__bp/ScrollTrigger.min.js"></script><script src="/__bp/Draggable.min.js"></script>' +
+      '<script src="/__bp/InertiaPlugin.min.js"></script><script src="/__bp/motion.js"></script><script src="/__bp/interact.js"></script></head>');
   }
   res.writeHead(entry.status, headers);
   res.end(body);
@@ -189,9 +191,10 @@ http.createServer((req, res) => {
   const BP = {
     '/__bp/content.js': 'application/javascript', '/__bp/hero.js': 'application/javascript', '/__bp/hero.css': 'text/css',
     '/__bp/theme.js': 'application/javascript', '/__bp/theme.css': 'text/css', '/__bp/motion.js': 'application/javascript',
+    '/__bp/interact.js': 'application/javascript',
   };
   // GSAP comes from node_modules (CSP only allows scripts from this server)
-  const GSAP = { '/__bp/gsap.min.js': 1, '/__bp/ScrollTrigger.min.js': 1 };
+  const GSAP = { '/__bp/gsap.min.js': 1, '/__bp/ScrollTrigger.min.js': 1, '/__bp/Draggable.min.js': 1, '/__bp/InertiaPlugin.min.js': 1 };
   if (GSAP[u.pathname]) {
     res.writeHead(200, { 'content-type': 'application/javascript', 'cache-control': 'no-cache' });
     return res.end(fs.readFileSync(path.join(__dirname, 'node_modules', 'gsap', 'dist', path.basename(u.pathname))));
