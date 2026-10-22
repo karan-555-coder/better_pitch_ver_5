@@ -2,8 +2,7 @@
 // HTML page by server.js:
 //  - caustic light ripples over dark sections;
 //  - sections rise into view behind a wave, like the tide coming in;
-//  - images open out of a pearl;
-//  - cards fill with water from the bottom on hover.
+//  - images open out of a pearl.
 // GSAP motion lives in motion.js and pointer interactions in interact.js.
 // Like content.js it waits for React to hydrate, and it only sets data
 // attributes and custom properties, removing the entrance ones once they have
@@ -13,7 +12,6 @@
   const below = el => { const r = el.getBoundingClientRect(); return r.height > 0 && r.top >= innerHeight; };
   // sliders and marquees move sideways, so their items may never scroll into view
   const skip = el => el.closest('#bp-hero, [class*="marquee"], [class*="embla"]');
-  const moving = cs => cs.translate !== 'none' || cs.transform !== 'none' || cs.scale !== 'none' || cs.rotate !== 'none';
   // Entrance helper: el gets attr="wait" now, "in" when it scrolls into view,
   // and the attribute is dropped once the transition has finished.
   const io = new IntersectionObserver((entries, obs) => {
@@ -60,30 +58,15 @@
     }
   }
 
-  const CARDS = 'main .rounded-2xl.bg-white:not(.py-16), main .rounded-3xl.bg-white, main .rounded-xl.bg-white';
-  function liquid() {
-    for (const c of document.querySelectorAll(CARDS)) {
-      if (c.dataset.bpLiquid !== undefined || skip(c) || c.parentElement.closest('[data-bp-liquid]')) continue;
-      if (getComputedStyle(c).backgroundImage === 'none') c.dataset.bpLiquid = '';
-    }
-  }
-
   let started = false;
   function start() {
     if (started) return;
     started = true;
     caustics();
-    liquid();
     if (!reduced) {
       tides();
       irises();
     }
-    let pending = false;
-    new MutationObserver(() => {
-      if (pending) return;
-      pending = true;
-      requestAnimationFrame(() => { pending = false; liquid(); });
-    }).observe(document.querySelector('main') || document.body, { childList: true, subtree: true });
   }
   window.addEventListener('load', () => setTimeout(start, 600));
   setTimeout(start, 4500);

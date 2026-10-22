@@ -184,6 +184,4 @@
   border:1.5px solid transparent;animation:bphPearl 6s linear infinite}
 @property --bph-pa{syntax:"<angle>";inherits:false;initial-value:0deg}
 @keyframes bphPearl{to{--bph-pa:360deg}}
-/* the hero ripple canvas (interact.js) sits above the tiles, below the content */
-.bph-ripples{position:absolute;inset:0;z-index:0;pointer-events:none}
 @media (prefers-reduced-motion:reduce){.bph-box::before,.bph-box::after,.bph-orb::before{animation:none}}
