@@ -1,81 +1,55 @@
-/* Site-wide BetterPitch look, loaded on every page by server.js: a soft orange
-   glow drifting behind the peach page background, scroll-in reveals (theme.js),
-   hover lift on buttons/cards and a shine on the orange buttons. Colours and
-   motion only: nothing here changes layout. Motion uses `translate`, not
-   `transform`, so the recorded components' own transforms are left alone. */
+/* Site-wide BetterPitch look (version 2, rose/crimson), loaded on every page by
+   server.js: a dot grid with a rose spotlight that follows the mouse, headings
+   that rise in word by word (theme.js), flowing colour in gradient headings,
+   3D tilt on cards and a light running round the rose buttons' border. Colours
+   and motion only: nothing here changes layout. */
 
-/* drifting glow; the same fixed-position image on every ivory layer, so nested
-   ivory sections line up with the one behind them */
-@property --bp-x1{syntax:'<percentage>';inherits:true;initial-value:12%}
-@property --bp-x2{syntax:'<percentage>';inherits:true;initial-value:88%}
-@property --bp-y1{syntax:'<percentage>';inherits:true;initial-value:18%}
-:root{animation:bpGlow 12s ease-in-out infinite alternate}
-@keyframes bpGlow{
-  0%{--bp-x1:12%;--bp-x2:88%;--bp-y1:18%}
-  50%{--bp-x1:45%;--bp-x2:60%;--bp-y1:35%}
-  100%{--bp-x1:80%;--bp-x2:20%;--bp-y1:12%}
-}
+/* dot grid + mouse spotlight (theme.js keeps --bp-mx/--bp-my on <html>); the
+   same fixed-position image on every blush layer, so nested ones line up */
+:root{--bp-mx:50vw;--bp-my:35vh;
+  --bp-dots:radial-gradient(circle,rgba(190,18,60,.12) 1px,transparent 1.6px);
+  --bp-spot:radial-gradient(280px circle at var(--bp-mx) var(--bp-my),rgba(251,113,133,.16),transparent 70%)}
 body,.bg-secondary-light-ivory{
-  background-image:
-    radial-gradient(42vw 34vw at var(--bp-x1) var(--bp-y1),rgba(251,146,60,.07),transparent 70%),
-    radial-gradient(38vw 30vw at var(--bp-x2) 85%,rgba(251,191,36,.06),transparent 70%);
-  background-attachment:fixed}
+  background-image:var(--bp-dots),var(--bp-spot);
+  background-size:22px 22px,auto;background-attachment:fixed}
+section.bg-gradient-hero{
+  background-image:var(--bp-dots),var(--bp-spot),var(--gradient-hero);
+  background-size:22px 22px,auto,auto;background-attachment:fixed,fixed,scroll}
 
-/* the big white panels fade in from the peach page instead of starting on a hard edge */
+/* the big white panels fade in from the blush page instead of starting on a hard edge */
 main .bg-white.rounded-2xl.py-16{
   background-color:transparent;
   background-image:linear-gradient(180deg,var(--color-secondary-light-ivory) 0%,#fff 12%,#fff 88%,var(--color-secondary-light-ivory) 100%)}
 
-/* playful layer in the roomy sections (theme.js adds .bp-play): drifting glow
-   blobs, rising bubbles and a pulsing ring, painted behind the section content */
-.bp-host{position:relative;isolation:isolate}
-.bp-play{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none;border-radius:inherit}
-.bp-play i{position:absolute;display:block;border-radius:50%}
-.bp-blob{width:var(--s);height:var(--s);filter:blur(40px);opacity:.22;
-  background:radial-gradient(circle at 35% 35%,#fdba74,#fb923c 45%,transparent 70%);
-  animation:bpBlob var(--t) ease-in-out infinite alternate;animation-delay:var(--d)}
-.bp-blob.amber{background:radial-gradient(circle at 35% 35%,#fde68a,#fbbf24 45%,transparent 70%);opacity:.18}
-@keyframes bpBlob{
-  0%{translate:0 0;scale:1}
-  50%{translate:var(--x1) var(--y1);scale:1.15}
-  100%{translate:var(--x2) var(--y2);scale:.92}
-}
-.bp-bubble{width:var(--s);height:var(--s);bottom:-30px;opacity:0;
-  background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.9),rgba(251,146,60,.55) 60%,rgba(234,88,12,.35));
-  box-shadow:0 0 12px rgba(251,146,60,.35);
-  animation:bpRise var(--t) linear infinite;animation-delay:var(--d)}
-@keyframes bpRise{
-  0%{translate:0 0;opacity:0}
-  12%{opacity:.6}
-  50%{translate:var(--sway) -45vh}
-  85%{opacity:.5}
-  100%{translate:0 -95vh;opacity:0}
-}
-.bp-ring{width:var(--s);height:var(--s);border:1.5px solid rgba(251,146,60,.35);
-  animation:bpRing var(--t) ease-in-out infinite;animation-delay:var(--d)}
-@keyframes bpRing{0%,100%{scale:.85;opacity:.25}50%{scale:1.12;opacity:.45}}
+/* headings rise in word by word; theme.js puts the words back as plain text afterwards */
+.bp-w{display:inline-block;opacity:0;translate:0 .5em;filter:blur(6px);
+  transition:opacity .5s ease,translate .55s cubic-bezier(.2,.75,.2,1),filter .5s ease;transition-delay:calc(var(--i) * 45ms)}
+.bp-w::before{content:attr(data-w)}
+[data-bp-words="in"] .bp-w{opacity:1;translate:none;filter:none}
 
-/* scroll-in reveal (theme.js sets data-bp-reveal="wait" then removes it) */
-[data-bp-reveal]{transition:opacity .45s ease,translate .45s cubic-bezier(.2,.75,.2,1);transition-delay:var(--bp-delay,0s)}
-[data-bp-reveal="wait"]{opacity:0;translate:0 20px}
+/* gradient-text headings: the colours keep flowing */
+[data-bp-flow]{background-size:220% auto;animation:bpFlow 6s ease-in-out infinite alternate}
+@keyframes bpFlow{from{background-position:0% 50%}to{background-position:100% 50%}}
 
-/* hover lift + orange glow */
-main a.rounded-xl,main button.rounded-xl,main a.rounded-full,main button.rounded-full{
-  transition:translate .25s ease,box-shadow .25s ease,background-color .2s,color .2s,border-color .2s}
-main a.rounded-xl:hover,main button.rounded-xl:hover,main a.rounded-full:hover,main button.rounded-full:hover{
-  translate:0 -2px;box-shadow:0 10px 24px -12px rgba(234,88,12,.55)}
-main .rounded-2xl.bg-white,main .rounded-3xl.bg-white{transition:translate .3s ease,box-shadow .3s ease}
-main .rounded-2xl.bg-white:hover,main .rounded-3xl.bg-white:hover{translate:0 -4px;box-shadow:0 22px 44px -26px rgba(194,65,12,.45)}
+/* 3D tilt towards the mouse, with a soft rose glare under the pointer */
+[data-bp-tilt]{transform:perspective(900px) rotateX(var(--bp-rx,0deg)) rotateY(var(--bp-ry,0deg));
+  transition:transform .5s cubic-bezier(.2,.75,.2,1),box-shadow .4s ease}
+[data-bp-tilt]:hover{transition:transform .12s linear,box-shadow .4s ease;
+  box-shadow:0 26px 50px -30px rgba(159,18,57,.5);
+  background-image:radial-gradient(360px circle at var(--bp-gx,50%) var(--bp-gy,50%),rgba(251,113,133,.12),transparent 50%)}
 
-/* light sweeping across the orange buttons */
-a.bg-primary-800,button.bg-primary-800{
-  background-image:linear-gradient(110deg,transparent 40%,rgba(255,255,255,.2) 50%,transparent 60%);
-  background-size:250% 100%;background-repeat:no-repeat;animation:bpShine 2.4s ease-in-out infinite}
-@keyframes bpShine{0%{background-position:130% 0}60%,100%{background-position:-30% 0}}
+/* a light running round the border of the rose buttons */
+@property --bp-ang{syntax:'<angle>';inherits:false;initial-value:0deg}
+a.bg-primary-800:not(.absolute):not(.fixed),button.bg-primary-800:not(.absolute):not(.fixed){position:relative;isolation:isolate}
+a.bg-primary-800::before,button.bg-primary-800::before{content:"";position:absolute;inset:-2px;padding:2px;border-radius:inherit;z-index:-1;pointer-events:none;
+  background:conic-gradient(from var(--bp-ang),transparent 0 60%,#fda4af 74%,#fff 82%,#fb7185 90%,transparent 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
+  animation:bpSpin 2.8s linear infinite}
+@keyframes bpSpin{to{--bp-ang:360deg}}
 
 @media (prefers-reduced-motion:reduce){
-  :root,a.bg-primary-800,button.bg-primary-800{animation:none}
-  [data-bp-reveal]{transition:none;opacity:1;translate:none}
-  .bp-play i{animation:none}
-  .bp-bubble{display:none}
+  .bp-w{opacity:1;translate:none;filter:none;transition:none}
+  [data-bp-flow],a.bg-primary-800::before,button.bg-primary-800::before{animation:none}
+  [data-bp-tilt]{transform:none}
 }

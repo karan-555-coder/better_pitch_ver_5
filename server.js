@@ -81,8 +81,9 @@ function rewrite(body) {
   return s;
 }
 
-// BetterPitch palette: every purple/violet/magenta colour in the recorded files
-// (hue 240-335) is moved to the orange/amber range (hue 12-45), keeping its
+// BetterPitch palette (version 2, rose/crimson): every purple/violet/magenta
+// colour in the recorded files (hue 240-335) is moved to the crimson/rose range
+// (hue 338-354), keeping its
 // saturation, lightness and alpha, so only colours change. HTML and RSC payloads
 // must keep their byte length (see above), so there a replacement that would be
 // longer is skipped and a shorter one is padded with spaces.
@@ -98,16 +99,14 @@ function rgbOf(h, s, l) {
   const f = n => { const k = (n + h / 30) % 12, a = s * Math.min(l, 1 - l); return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))); };
   return [f(0), f(8), f(4)];
 }
-function toOrange(r, g, b) {
+function toTheme(r, g, b) {
   const [h, s, l] = hslOf(r, g, b);
   if (h < 240 || h > 335 || s <= .12) return null;
-  return rgbOf(12 + (h - 240) * .35, s, l);
+  return rgbOf(338 + (h - 240) * .17, s, l);
 }
 const hex2 = n => n.toString(16).padStart(2, '0');
-// Fixed swaps: the ivory page backgrounds get a light orange (peach) tint, and
-// the pink-red stop of the heading text gradient (just outside the purple hue
-// range) becomes orange-red.
-const FIXED = { fbf9f7: 'fdf7f2', f4f0ec: 'f9ede3', f5f1ed: 'faeee5', f8f5f3: 'fcf4ee', fc1855: 'f4511e' };
+// Fixed swaps: the ivory page backgrounds get a light rose (blush) tint.
+const FIXED = { fbf9f7: 'fff8f9', f4f0ec: 'fbeef1', f5f1ed: 'fcf0f2', f8f5f3: 'fdf5f6' };
 
 function recolor(s, type) {
   const exactLength = /text\/html|x-component/.test(type);
@@ -116,13 +115,13 @@ function recolor(s, type) {
     const full = h.length === 3 ? h.replace(/./g, c => c + c) : h;
     const fixed = h.length !== 3 && FIXED[full.slice(0, 6).toLowerCase()];
     if (fixed) return '#' + fixed + full.slice(6);
-    const c = toOrange(...[0, 2, 4].map(i => parseInt(full.substr(i, 2), 16)));
+    const c = toTheme(...[0, 2, 4].map(i => parseInt(full.substr(i, 2), 16)));
     if (!c) return m;
     if (h.length === 3) return '#' + c.map(v => Math.round(v / 17).toString(16)).join('');
     return '#' + c.map(hex2).join('') + full.slice(6);
   });
   return s.replace(/(rgba?\(\s*)(\d+)([ ,]+)(\d+)([ ,]+)(\d+)/g, (m, p, r, s1, g, s2, b) => {
-    const c = toOrange(+r, +g, +b);
+    const c = toTheme(+r, +g, +b);
     if (!c) return m;
     let out = p + c[0] + s1 + c[1] + s2 + c[2];
     if (exactLength) {

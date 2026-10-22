@@ -1,11 +1,14 @@
-# BetterPitch website
+# BetterPitch website — version 2 (Rose / Crimson)
 
 The BetterPitch marketing site (AI voice agents that call, qualify and follow
 up), built on a working local copy of https://www.artisan.co. The original
 site was recorded in Chrome and is replayed with its original URLs, so the
 Next.js JavaScript, animations, menus and images all work. BetterPitch copy,
-the voice-demo hero, an orange/amber colour theme and extra motion are layered
+the voice-demo hero, a rose/crimson colour theme and extra motion are layered
 on top without editing the recorded files.
+
+Each version is a colour variant of the same site in its own repo; version 1
+(orange/amber) is https://github.com/karan-555-coder/better-pitch-version_1.
 
 ## Run
 
@@ -22,9 +25,9 @@ again. Changes to files in `betterpitch/` only need a page refresh
 |---|---|---|
 | Copy | `betterpitch/content.js` | Swaps the recorded text for BetterPitch copy after React hydrates |
 | Hero | `betterpitch/hero.js`, `hero.css` | Adds the voice-demo hero as the first section of the home page |
-| Colours | `recolor()` in `server.js` | Moves every purple/violet/magenta colour (hue 240-335) in CSS, HTML, JS, SVG and RSC data to orange/amber, keeping lightness, saturation and alpha; ivory backgrounds become a light peach |
-| Images | `recolor-images.js` -> `archive/recolored/` | Same purple-to-orange shift on the pixels of the WebP/PNG/JPEG images; `server.js` serves the recoloured copy when one exists |
-| Motion | `betterpitch/theme.css`, `theme.js` | Drifting orange background glow, playful blobs/bubbles/ring in roomy sections, scroll-in reveals, hover lift on buttons and cards, shine on orange buttons, gradient edges on the big white panels |
+| Colours | `recolor()` in `server.js` | Moves every purple/violet/magenta colour (hue 240-335) in CSS, HTML, JS, SVG and RSC data to crimson/rose (hue 338-354), keeping lightness, saturation and alpha; ivory backgrounds become a light blush |
+| Images | `recolor-images.js` -> `archive/recolored/` | Same purple-to-rose shift on the pixels of the WebP/PNG/JPEG images; `server.js` serves the recoloured copy when one exists |
+| Motion | `betterpitch/theme.css`, `theme.js` | Dot-grid background with a rose spotlight that follows the mouse, headings that rise in word by word, flowing colour in gradient headings, 3D tilt + glare on cards, a light running round the rose buttons' border, gradient edges on the big white panels |
 
 Colour replacements in HTML and RSC payloads keep the exact byte length:
 Next.js embeds length-prefixed RSC rows, and a mismatch breaks hydration.
@@ -40,10 +43,10 @@ All motion respects `prefers-reduced-motion`.
 | `npm run verify` | Opens every page from the local copy, lists missing files/JS errors, saves screenshots to `screenshots/` |
 | `npm run compare` | Screenshots live site vs local copy at 1440 / 768 / 375px and reports % of pixels that differ (`comparisons/`) |
 | `npm run fetch-missing` | Downloads files `verify` reported missing (reads `verify-report.txt`) into the archive; or pass paths: `node fetch-missing.js "/_next/image?url=..."` |
-| `npm run recolor-images` | Recolours purple in the archived images to orange (writes `archive/recolored/`) |
+| `npm run recolor-images` | Recolours purple in the archived images to the theme colour (writes `archive/recolored/`) |
 
 After a capture or fetch, run `npm run recolor-images` so new images are
-orange too, then restart `npm start`. To add a page (e.g. a blog post), add its
+recoloured too, then restart `npm start`. To add a page (e.g. a blog post), add its
 path to `pages.txt` and run capture.
 
 Chrome is expected at the default install path; to use Edge (or another

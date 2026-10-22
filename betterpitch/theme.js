@@ -1,77 +1,121 @@
-// Site-wide motion (styles in theme.css), injected into every HTML page by
-// server.js:
-//  - a playful layer (glow blobs, rising bubbles, a pulsing ring) appended to
-//    the roomy sections, behind their content;
-//  - sections, headings and cards fading up as they scroll into view.
-// Like content.js it waits for React to hydrate. The reveal only sets a data
-// attribute (never class or style), so React re-renders don't fight it; the
-// playful layer is re-added if a re-render drops it. Things already on screen
-// when the page opens are not hidden.
+// Site-wide motion for version 2 (styles in theme.css), injected into every
+// HTML page by server.js:
+//  - the background spotlight follows the mouse (--bp-mx/--bp-my on <html>);
+//  - headings rise in word by word as they scroll into view, then go back to
+//    their original text nodes, so React and content.js still own them;
+//    gradient-text headings get flowing colour instead (splitting would break
+//    their background-clip);
+//  - cards tilt in 3D towards the mouse.
+// Like content.js it waits for React to hydrate, and it only sets data
+// attributes and custom properties, never class names.
 (function () {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const HOSTS = 'main section.bg-gradient-hero, main section.bg-secondary-light-ivory, main .bg-white.rounded-2xl.py-16';
-  const TARGETS = 'main section, main h2, main .rounded-2xl.bg-white, main .rounded-3xl.bg-white';
+  const HEADINGS = 'main h1, main h2';
+  const CARDS = 'main .rounded-2xl.bg-white:not(.py-16), main .rounded-3xl.bg-white';
 
-  const rand = (a, b) => a + Math.random() * (b - a);
-  // mostly near the left/right edges, where these sections are empty
-  const sideX = () => (Math.random() < .5 ? rand(-6, 22) : rand(78, 100));
+  // spotlight
+  let mx = 0, my = 0, queued = false;
+  addEventListener('pointermove', e => {
+    mx = e.clientX; my = e.clientY;
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => {
+      queued = false;
+      document.documentElement.style.setProperty('--bp-mx', mx + 'px');
+      document.documentElement.style.setProperty('--bp-my', my + 'px');
+    });
+  }, { passive: true });
 
-  function playLayer() {
-    const box = document.createElement('div');
-    box.className = 'bp-play';
-    box.setAttribute('aria-hidden', 'true');
-    let html = '';
-    for (let i = 0; i < 3; i++) {
-      html += `<i class="bp-blob${i === 1 ? ' amber' : ''}" style="--s:${rand(220, 340) | 0}px;left:${sideX() - 10}%;top:${rand(0, 65) | 0}%;` +
-        `--x1:${rand(-70, 70) | 0}px;--y1:${rand(-50, 50) | 0}px;--x2:${rand(-70, 70) | 0}px;--y2:${rand(-50, 50) | 0}px;` +
-        `--t:${rand(7, 11).toFixed(1)}s;--d:${-rand(0, 8).toFixed(1)}s"></i>`;
+  const isClipText = el => /text/.test(getComputedStyle(el).backgroundClip || getComputedStyle(el).webkitBackgroundClip || '');
+
+  // Words are drawn from a data attribute (::before), not as text nodes, so
+  // content.js's text swapping never sees single words while they animate.
+  function split(h) {
+    const parts = [];
+    const walker = document.createTreeWalker(h, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    let n;
+    while ((n = walker.nextNode())) if (n.data.trim()) nodes.push(n);
+    let i = 0;
+    for (const node of nodes) {
+      const added = [];
+      for (const tok of node.data.split(/(\s+)/)) {
+        if (!tok) continue;
+        let el;
+        if (/^\s+$/.test(tok)) el = document.createTextNode(tok);
+        else {
+          el = document.createElement('span');
+          el.className = 'bp-w';
+          el.dataset.w = tok;
+          el.setAttribute('aria-hidden', 'true');
+          el.style.setProperty('--i', i++);
+        }
+        node.parentNode.insertBefore(el, node);
+        added.push(el);
+      }
+      const parent = node.parentNode;
+      parent.removeChild(node);
+      parts.push({ node, parent, added });
     }
-    for (let i = 0; i < 5; i++) {
-      const x = Math.random() < .7 ? sideX() : rand(25, 75);
-      html += `<i class="bp-bubble" style="--s:${rand(7, 18) | 0}px;left:${x.toFixed(1)}%;--sway:${rand(-40, 40) | 0}px;` +
-        `--t:${rand(6, 10).toFixed(1)}s;--d:${-rand(0, 10).toFixed(1)}s"></i>`;
-    }
-    html += `<i class="bp-ring" style="--s:${rand(130, 200) | 0}px;left:${sideX() - 6}%;top:${rand(10, 70) | 0}%;--t:${rand(4, 6).toFixed(1)}s;--d:${-rand(0, 4).toFixed(1)}s"></i>`;
-    box.innerHTML = html;
-    return box;
+    h.setAttribute('aria-label', h.textContent.trim() || nodes.map(x => x.data).join(''));
+    return { parts, count: i };
   }
 
-  function decorate() {
-    for (const el of document.querySelectorAll(HOSTS)) {
-      if (el.closest('#bp-hero')) continue;
-      // React may rewrite className on a re-render, so this is re-checked too
-      if (!el.classList.contains('bp-host')) el.classList.add('bp-host');
-      if (!el.querySelector(':scope > .bp-play')) el.appendChild(playLayer());
+  function restore(h, { parts }) {
+    for (const { node, parent, added } of parts) {
+      if (!added[0] || added[0].parentNode !== parent) continue;
+      parent.insertBefore(node, added[0]);
+      for (const el of added) el.remove();
     }
+    h.removeAttribute('data-bp-words');
+    h.removeAttribute('aria-label');
   }
 
-  function reveal() {
+  function headings() {
     const io = new IntersectionObserver(entries => {
       for (const e of entries) {
         if (!e.isIntersecting) continue;
-        const el = e.target;
-        io.unobserve(el);
-        el.dataset.bpReveal = 'in';
-        // hand the element its own transitions back once it has arrived
-        setTimeout(() => { el.removeAttribute('data-bp-reveal'); el.style.removeProperty('--bp-delay'); }, 1600);
+        const h = e.target;
+        io.unobserve(h);
+        h.dataset.bpWords = 'in';
+        const s = h._bpSplit;
+        setTimeout(() => restore(h, s), s.count * 45 + 900);
       }
-    // threshold 0, not a fraction: a fraction of a very tall section may never fit on screen
-    }, { threshold: 0, rootMargin: '0px 0px -10% 0px' });
+    }, { threshold: 0, rootMargin: '0px 0px -8% 0px' });
 
-    const vh = innerHeight;
-    const seen = new Map();
-    for (const el of document.querySelectorAll(TARGETS)) {
-      if (el.closest('#bp-hero')) continue;
-      // a section inside one that is already fading in would just double up
-      if (el.tagName === 'SECTION' && el.parentElement.closest('[data-bp-reveal]')) continue;
-      const r = el.getBoundingClientRect();
-      if (!r.height || r.top < vh) continue;
-      // small stagger between siblings, e.g. a row of cards
-      const n = seen.get(el.parentNode) || 0;
-      seen.set(el.parentNode, n + 1);
-      if (n) el.style.setProperty('--bp-delay', Math.min(n, 5) * 0.08 + 's');
-      el.dataset.bpReveal = 'wait';
-      io.observe(el);
+    for (const h of document.querySelectorAll(HEADINGS)) {
+      if (h.closest('#bp-hero') || h.dataset.bpWords) continue;
+      const clip = [h, ...h.querySelectorAll('*')].find(isClipText);
+      if (clip) { clip.dataset.bpFlow = ''; continue; }
+      if (reduced) continue;
+      h._bpSplit = split(h);
+      h.dataset.bpWords = 'wait';
+      io.observe(h);
+    }
+  }
+
+  function tilt(card) {
+    card.dataset.bpTilt = '';
+    card.addEventListener('pointermove', e => {
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      card.style.setProperty('--bp-ry', ((x - .5) * 8).toFixed(2) + 'deg');
+      card.style.setProperty('--bp-rx', ((.5 - y) * 6).toFixed(2) + 'deg');
+      card.style.setProperty('--bp-gx', (x * 100).toFixed(1) + '%');
+      card.style.setProperty('--bp-gy', (y * 100).toFixed(1) + '%');
+    });
+    card.addEventListener('pointerleave', () => {
+      card.style.setProperty('--bp-rx', '0deg');
+      card.style.setProperty('--bp-ry', '0deg');
+    });
+  }
+
+  function cards() {
+    for (const c of document.querySelectorAll(CARDS)) {
+      if (c.dataset.bpTilt !== undefined || c.closest('#bp-hero') || c.parentElement.closest('[data-bp-tilt]')) continue;
+      // leave cards that already have their own transform alone
+      if (getComputedStyle(c).transform !== 'none') continue;
+      tilt(c);
     }
   }
 
@@ -79,14 +123,15 @@
   function start() {
     if (started) return;
     started = true;
-    decorate();
-    let queued = false;
+    headings();
+    if (reduced) return;
+    cards();
+    let pending = false;
     new MutationObserver(() => {
-      if (queued) return;
-      queued = true;
-      requestAnimationFrame(() => { queued = false; decorate(); });
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(() => { pending = false; cards(); });
     }).observe(document.querySelector('main') || document.body, { childList: true, subtree: true });
-    if (!reduced) reveal();
   }
   window.addEventListener('load', () => setTimeout(start, 600));
   setTimeout(start, 4500);

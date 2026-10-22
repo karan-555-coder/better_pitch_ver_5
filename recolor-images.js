@@ -1,6 +1,7 @@
 // Moves purple in the archived raster images (WebP/PNG/JPEG) to the BetterPitch
-// orange, the same hue shift server.js applies to CSS/HTML colours. Only purple
-// pixels change (hue 235-340); skin, greys, black and white stay as they are.
+// rose/crimson (version 2), the same hue shift server.js applies to CSS/HTML
+// colours. Only purple pixels change (hue 235-340); skin, greys, black and
+// white stay as they are.
 // Results go to archive/recolored/<file>; the originals are left untouched and
 // server.js serves the recoloured copy when one exists.
 // Usage: node recolor-images.js   (re-run after a capture)
@@ -33,7 +34,7 @@ async function recolorInPage(dataUrl, type) {
     // Soft edges on hue and saturation so there is no visible seam in gradients/photos.
     const w = Math.min(1, Math.max(0, (h - 235) / 15), Math.max(0, (340 - h) / 15)) * Math.min(1, Math.max(0, (s - .08) / .1));
     if (w <= 0) continue;
-    const nh = 12 + (Math.min(335, Math.max(240, h)) - 240) * .35;
+    const nh = 338 + (Math.min(335, Math.max(240, h)) - 240) * .17;
     d[i] += (f(0, nh, s, l) - d[i]) * w;
     d[i + 1] += (f(8, nh, s, l) - d[i + 1]) * w;
     d[i + 2] += (f(4, nh, s, l) - d[i + 2]) * w;
