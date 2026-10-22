@@ -1,117 +1,81 @@
-/* Site-wide BetterPitch look (version 2, rose/crimson), loaded on every page by
-   server.js: a dot grid with a rose spotlight that follows the mouse, headings
-   that rise in word by word (theme.js), flowing colour in gradient headings,
-   3D tilt on cards, a light running round the rose buttons' border, magnetic
-   buttons, a scroll progress bar, bottom-up image reveals, nav underlines,
-   floating/bouncing card icons, a rose cursor, click ripples, cards popping in,
-   paragraphs sharpening in and arrow nudges. Colours and motion only: nothing
-   here changes layout. */
+/* Site-wide BetterPitch look (version 3, black & gold), loaded on every page by
+   server.js: a black-and-gold preloader curtain, parallax images, sections
+   opening like curtains, headings tracking in with a gold line drawn under
+   them, a gold spotlight border on cards, numbers counting up, a gold fill
+   sweeping across the black buttons and a glass nav once you scroll (state set
+   by theme.js). Colours and motion only: nothing here changes layout. */
 
-/* dot grid + mouse spotlight (theme.js keeps --bp-mx/--bp-my on <html>); the
-   same fixed-position image on every blush layer, so nested ones line up */
-:root{--bp-mx:50vw;--bp-my:35vh;
-  --bp-dots:radial-gradient(circle,rgba(190,18,60,.12) 1px,transparent 1.6px);
-  --bp-spot:radial-gradient(280px circle at var(--bp-mx) var(--bp-my),rgba(251,113,133,.16),transparent 70%)}
-body,.bg-secondary-light-ivory{
-  background-image:var(--bp-dots),var(--bp-spot);
-  background-size:22px 22px,auto;background-attachment:fixed}
-section.bg-gradient-hero{
-  background-image:var(--bp-dots),var(--bp-spot),var(--gradient-hero);
-  background-size:22px 22px,auto,auto;background-attachment:fixed,fixed,scroll}
+/* preloader: a pseudo-element, not a DOM node, so React's <html> is untouched.
+   theme.js sets data-bp-ready to lift it; the failsafe lifts it anyway. */
+html::before{content:"";position:fixed;inset:0;z-index:2147483002;pointer-events:none;
+  background:linear-gradient(90deg,transparent,#c9a24a 30%,#f8eed2 50%,#c9a24a 70%,transparent) center/0% 1px no-repeat,#0e0c08;
+  transition:transform .9s cubic-bezier(.76,0,.24,1) .15s;
+  animation:bpLine 1s cubic-bezier(.65,.05,.25,1) .1s forwards,bpFailsafe 0s 7s forwards}
+html[data-bp-ready]::before{transform:translateY(-100%)}
+@keyframes bpLine{to{background-size:60% 1px,auto}}
+@keyframes bpFailsafe{to{transform:translateY(-100%)}}
 
-/* the big white panels fade in from the blush page instead of starting on a hard edge */
+/* the big white panels fade in from the ivory page instead of starting on a hard edge */
 main .bg-white.rounded-2xl.py-16{
   background-color:transparent;
   background-image:linear-gradient(180deg,var(--color-secondary-light-ivory) 0%,#fff 12%,#fff 88%,var(--color-secondary-light-ivory) 100%)}
 
-/* headings rise in word by word; theme.js puts the words back as plain text afterwards */
-.bp-w{display:inline-block;opacity:0;translate:0 .5em;filter:blur(6px);
-  transition:opacity .5s ease,translate .55s cubic-bezier(.2,.75,.2,1),filter .5s ease;transition-delay:calc(var(--i) * 45ms)}
-.bp-w::before{content:attr(data-w)}
-[data-bp-words="in"] .bp-w{opacity:1;translate:none;filter:none}
+/* parallax: theme.js moves images at their own speed (--bp-py); clipped ones
+   are zoomed a little so the drift never shows an edge */
+[data-bp-px]{translate:0 var(--bp-py,0px);will-change:translate}
+[data-bp-px="zoom"]{scale:1.08}
 
-/* gradient-text headings: the colours keep flowing */
-[data-bp-flow]{background-size:220% auto;animation:bpFlow 6s ease-in-out infinite alternate}
-@keyframes bpFlow{from{background-position:0% 50%}to{background-position:100% 50%}}
+/* sections open from the middle like curtains */
+[data-bp-curtain]{transition:clip-path 1.1s cubic-bezier(.76,0,.24,1)}
+[data-bp-curtain="wait"]{clip-path:inset(0 50% 0 50% round 16px)}
+[data-bp-curtain="in"]{clip-path:inset(0 0 0 0 round 0)}
 
-/* 3D tilt towards the mouse, with a soft rose glare under the pointer */
-[data-bp-tilt]{transform:perspective(900px) rotateX(var(--bp-rx,0deg)) rotateY(var(--bp-ry,0deg));
-  transition:transform .5s cubic-bezier(.2,.75,.2,1),box-shadow .4s ease}
-[data-bp-tilt]:hover{transition:transform .12s linear,box-shadow .4s ease;
-  box-shadow:0 26px 50px -30px rgba(159,18,57,.5);
-  background-image:radial-gradient(360px circle at var(--bp-gx,50%) var(--bp-gy,50%),rgba(251,113,133,.12),transparent 50%)}
+/* headings track in (wide, soft -> normal) */
+[data-bp-track]{transition:letter-spacing 1s cubic-bezier(.2,.75,.2,1),opacity .9s ease,filter .9s ease}
+[data-bp-track="wait"]{letter-spacing:.1em;opacity:0;filter:blur(8px)}
 
-/* a light running round the border of the rose buttons */
-@property --bp-ang{syntax:'<angle>';inherits:false;initial-value:0deg}
-a.bg-primary-800:not(.absolute):not(.fixed),button.bg-primary-800:not(.absolute):not(.fixed){position:relative;isolation:isolate}
-a.bg-primary-800::before,button.bg-primary-800::before{content:"";position:absolute;inset:-2px;padding:2px;border-radius:inherit;z-index:-1;pointer-events:none;
-  background:conic-gradient(from var(--bp-ang),transparent 0 60%,#fda4af 74%,#fff 82%,#fb7185 90%,transparent 100%);
+/* a gold line draws itself under each heading */
+[data-bp-line]{position:relative}
+/* a fixed 8px below the heading, inside the usual 16px gap to the text under it */
+[data-bp-line]::after{content:"";position:absolute;bottom:-8px;width:min(120px,40%);height:2px;border-radius:2px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,#b8923f 18%,#e6c77a 50%,#b8923f 82%,transparent);
+  scale:0 1;transition:scale 1s cubic-bezier(.65,.05,.25,1) .35s}
+[data-bp-align="center"]::after{left:50%;translate:-50% 0}
+[data-bp-align="left"]::after{left:0;transform-origin:0 50%}
+[data-bp-align="right"]::after{right:0;transform-origin:100% 50%}
+[data-bp-line="in"]::after{scale:1 1}
+
+/* gold spotlight border + soft inner glow following the mouse on cards */
+[data-bp-spot="rel"]{position:relative}
+[data-bp-spot]{transition:box-shadow .4s ease}
+[data-bp-spot]::after{content:"";position:absolute;inset:0;padding:1.5px;border-radius:inherit;pointer-events:none;z-index:2;
+  background:radial-gradient(260px circle at var(--bp-sx,50%) var(--bp-sy,50%),rgba(230,199,122,1),rgba(201,162,74,.3) 40%,transparent 70%);
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
   mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
-  animation:bpSpin 2.8s linear infinite}
-@keyframes bpSpin{to{--bp-ang:360deg}}
+  opacity:0;transition:opacity .35s ease}
+[data-bp-spot]:hover::after{opacity:1}
+[data-bp-spot]:hover{box-shadow:0 30px 60px -40px rgba(110,84,30,.5);
+  background-image:radial-gradient(420px circle at var(--bp-sx,50%) var(--bp-sy,50%),rgba(201,162,74,.08),transparent 45%)}
 
-/* scroll progress bar along the top (element added by theme.js) */
-.bp-progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:2147483000;pointer-events:none;
-  transform-origin:0 50%;transform:scaleX(var(--bp-progress,0));
-  background:linear-gradient(90deg,#9f1239,#e11d48,#fb7185,#fda4af);box-shadow:0 0 10px rgba(225,29,72,.5)}
+/* numbers counting up keep a steady width while they run */
+[data-bp-count]{font-variant-numeric:tabular-nums}
 
-/* rose buttons lean towards the mouse */
-[data-bp-magnet]{translate:var(--bp-tx,0) var(--bp-ty,0);transition:translate .35s cubic-bezier(.2,.75,.2,1.4)}
-[data-bp-magnet]:hover{transition:translate .1s linear}
+/* black buttons: gold hairline, and a gold fill sweeps across on hover */
+a.bg-primary-800,button.bg-primary-800{
+  background-image:linear-gradient(90deg,#b8923f,#e6c77a);background-repeat:no-repeat;background-position:0 0;background-size:0% 100%;
+  box-shadow:inset 0 0 0 1px rgba(201,162,74,.55);
+  transition:background-size .45s cubic-bezier(.65,.05,.25,1),color .3s ease,box-shadow .3s ease}
+a.bg-primary-800:hover,button.bg-primary-800:hover{background-size:100% 100%;color:#14110a;
+  box-shadow:inset 0 0 0 1px rgba(201,162,74,.9),0 12px 30px -14px rgba(184,146,63,.7)}
 
-/* large images uncover bottom-up as they scroll in */
-[data-bp-img]{transition:clip-path 1s cubic-bezier(.65,.05,.25,1),scale 1.2s cubic-bezier(.2,.75,.2,1)}
-[data-bp-img="wait"]{clip-path:inset(100% 0 0 0 round 16px);scale:1.04}
-[data-bp-img="in"]{clip-path:inset(0 0 0 0 round 0);scale:1}
-
-/* rose underline sliding in under the top menu links */
-nav a:not(.rounded-xl):not(.rounded-full),nav button:not(.rounded-xl):not(.rounded-full){
-  background-image:linear-gradient(90deg,#e11d48,#fb7185);background-repeat:no-repeat;
-  background-position:0 100%;background-size:0% 2px;transition:background-size .3s ease}
-nav a:not(.rounded-xl):not(.rounded-full):hover,nav button:not(.rounded-xl):not(.rounded-full):hover{background-size:100% 2px}
-
-/* small card icons float gently, and bounce on hover */
-img[data-bp-icon]{animation:bpBob 3.6s ease-in-out infinite;animation-delay:var(--bp-bd,0s)}
-@keyframes bpBob{0%,100%{translate:0 0}50%{translate:0 -5px}}
-[data-bp-tilt]:hover [data-bp-icon]{animation:bpWiggle .7s cubic-bezier(.3,.7,.4,1.5)}
-
-/* rose cursor: a dot plus a trailing ring that grows over things you can click
-   (elements added by theme.js; the normal cursor stays) */
-.bp-cursor,.bp-cursor-ring{position:fixed;top:0;left:0;z-index:2147483001;pointer-events:none;border-radius:50%;
-  translate:var(--cx,-200px) var(--cy,-200px);transition:opacity .3s}
-.bp-cursor{width:8px;height:8px;margin:-4px 0 0 -4px;background:#e11d48;box-shadow:0 0 10px rgba(225,29,72,.6)}
-.bp-cursor-ring{width:34px;height:34px;margin:-17px 0 0 -17px;border:1.5px solid rgba(225,29,72,.45);
-  transition:width .25s,height .25s,margin .25s,background-color .25s,border-color .25s,opacity .3s}
-.bp-cursor-ring.on{width:58px;height:58px;margin:-29px 0 0 -29px;background:rgba(251,113,133,.12);border-color:rgba(225,29,72,.25)}
-.bp-cursor.off,.bp-cursor-ring.off{opacity:0}
-@media (hover:none),(pointer:coarse){.bp-cursor,.bp-cursor-ring{display:none}}
-
-/* click ripple (theme.js adds a clipped box with the ripple inside, then removes it) */
-.bp-ripple-box{position:absolute;inset:0;overflow:hidden;border-radius:inherit;pointer-events:none;z-index:1}
-.bp-ripple{position:absolute;left:var(--x);top:var(--y);width:var(--d);height:var(--d);margin:calc(var(--d) / -2) 0 0 calc(var(--d) / -2);
-  border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.55),rgba(251,113,133,.3) 55%,transparent 70%);
-  scale:0;animation:bpRipple .65s ease-out forwards}
-@keyframes bpRipple{to{scale:1;opacity:0}}
-
-/* cards pop in one after another; paragraphs sharpen in */
-[data-bp-pop]{transition:opacity .6s ease,translate .7s cubic-bezier(.2,.75,.2,1),scale .7s cubic-bezier(.2,.75,.2,1);transition-delay:var(--bp-pd,0s)}
-[data-bp-pop="wait"]{opacity:0;translate:0 40px;scale:.94}
-[data-bp-fade]{transition:opacity .7s ease,translate .7s ease,filter .7s ease;transition-delay:var(--bp-pd,0s)}
-[data-bp-fade="wait"]{opacity:0;translate:0 16px;filter:blur(5px)}
-
-/* arrows in buttons nudge forward on hover */
-a.rounded-xl svg:last-child,button.rounded-xl svg:last-child,a.rounded-full svg:last-child,button.rounded-full svg:last-child{transition:translate .3s cubic-bezier(.2,.75,.2,1.6)}
-a.rounded-xl:hover svg:last-child,button.rounded-xl:hover svg:last-child,a.rounded-full:hover svg:last-child,button.rounded-full:hover svg:last-child{translate:4px 0}
-@keyframes bpWiggle{0%{rotate:0deg;scale:1}30%{rotate:-10deg;scale:1.15}60%{rotate:7deg;scale:1.08}100%{rotate:0deg;scale:1}}
+/* nav turns to frosted glass with a gold hairline once the page scrolls */
+#page-scroller nav{transition:box-shadow .4s ease,backdrop-filter .4s ease}
+nav[data-bp-scrolled]{-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15);
+  box-shadow:0 1px 0 rgba(201,162,74,.35),0 14px 30px -24px rgba(20,17,10,.5)}
 
 @media (prefers-reduced-motion:reduce){
-  .bp-w{opacity:1;translate:none;filter:none;transition:none}
-  [data-bp-img]{clip-path:none;scale:none;transition:none}
-  [data-bp-magnet]{translate:none}
-  [data-bp-tilt]:hover [data-bp-icon],img[data-bp-icon]{animation:none}
-  [data-bp-pop],[data-bp-fade]{opacity:1;translate:none;scale:none;filter:none;transition:none}
-  .bp-cursor,.bp-cursor-ring,.bp-ripple{display:none}
-  [data-bp-flow],a.bg-primary-800::before,button.bg-primary-800::before{animation:none}
-  [data-bp-tilt]{transform:none}
+  html::before{display:none}
+  [data-bp-px]{translate:none;scale:none}
+  [data-bp-curtain]{clip-path:none;transition:none}
+  [data-bp-line]::after{scale:1 1;transition:none}
 }

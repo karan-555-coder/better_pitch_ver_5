@@ -1,311 +1,189 @@
-// Site-wide motion for version 2 (styles in theme.css), injected into every
+// Site-wide motion for version 3 (styles in theme.css), injected into every
 // HTML page by server.js:
-//  - the background spotlight follows the mouse (--bp-mx/--bp-my on <html>);
-//  - headings rise in word by word as they scroll into view, then go back to
-//    their original text nodes, so React and content.js still own them;
-//    gradient-text headings get flowing colour instead (splitting would break
-//    their background-clip);
-//  - cards tilt in 3D towards the mouse, and their small icons bounce;
-//  - rose buttons lean towards the mouse, a progress bar tracks scrolling and
-//    large images uncover bottom-up as they scroll in;
-//  - a rose cursor dot + trailing ring, click ripples, cards popping in and
-//    paragraphs sharpening in as they scroll into view.
+//  - lifts the preloader curtain once the page is ready;
+//  - parallax: images drift at their own speed while scrolling;
+//  - sections open like curtains, headings track in and get a gold line;
+//  - cards get a gold spotlight border that follows the mouse;
+//  - numbers count up from 0 when they scroll into view;
+//  - the nav turns to glass once the page scrolls.
 // Like content.js it waits for React to hydrate, and it only sets data
-// attributes and custom properties, never class names.
+// attributes, custom properties and (for counters, ending on the original
+// text) text node values. Things already on screen are not hidden.
 (function () {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const HEADINGS = 'main h1, main h2';
-  const CARDS = 'main .rounded-2xl.bg-white:not(.py-16), main .rounded-3xl.bg-white';
-
-  // spotlight
-  let mx = 0, my = 0, queued = false;
-  addEventListener('pointermove', e => {
-    mx = e.clientX; my = e.clientY;
-    if (queued) return;
-    queued = true;
-    requestAnimationFrame(() => {
-      queued = false;
-      document.documentElement.style.setProperty('--bp-mx', mx + 'px');
-      document.documentElement.style.setProperty('--bp-my', my + 'px');
-    });
-  }, { passive: true });
-
-  const isClipText = el => /text/.test(getComputedStyle(el).backgroundClip || getComputedStyle(el).webkitBackgroundClip || '');
-
-  // Words are drawn from a data attribute (::before), not as text nodes, so
-  // content.js's text swapping never sees single words while they animate.
-  function split(h) {
-    const parts = [];
-    const walker = document.createTreeWalker(h, NodeFilter.SHOW_TEXT);
-    const nodes = [];
-    let n;
-    while ((n = walker.nextNode())) if (n.data.trim()) nodes.push(n);
-    let i = 0;
-    for (const node of nodes) {
-      const added = [];
-      for (const tok of node.data.split(/(\s+)/)) {
-        if (!tok) continue;
-        let el;
-        if (/^\s+$/.test(tok)) el = document.createTextNode(tok);
-        else {
-          el = document.createElement('span');
-          el.className = 'bp-w';
-          el.dataset.w = tok;
-          el.setAttribute('aria-hidden', 'true');
-          el.style.setProperty('--i', i++);
-        }
-        node.parentNode.insertBefore(el, node);
-        added.push(el);
-      }
-      const parent = node.parentNode;
-      parent.removeChild(node);
-      parts.push({ node, parent, added });
+  const root = document.documentElement;
+  // The page scrolls inside #page-scroller, not the window.
+  const scroller = () => document.getElementById('page-scroller') || document.scrollingElement;
+  const onScroll = fn => {
+    const sc = scroller();
+    let ticking = false;
+    (sc === document.scrollingElement ? window : sc).addEventListener('scroll', () => {
+      if (!ticking) { ticking = true; requestAnimationFrame(() => { ticking = false; fn(sc); }); }
+    }, { passive: true });
+    fn(sc);
+  };
+  const reveal = (attr, done, margin) => new IntersectionObserver((entries, io) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      io.unobserve(e.target);
+      e.target.setAttribute(attr, 'in');
+      if (done) done(e.target);
     }
-    h.setAttribute('aria-label', h.textContent.trim() || nodes.map(x => x.data).join(''));
-    return { parts, count: i };
+  }, { threshold: 0, rootMargin: `0px 0px ${margin || '-12%'} 0px` });
+  const below = el => { const r = el.getBoundingClientRect(); return r.height > 0 && r.top >= innerHeight; };
+  // Inside a closed curtain an element counts as hidden, so it is triggered by
+  // its curtain section instead of by itself.
+  const watchers = new Map();
+  const watchIO = new IntersectionObserver((entries, io) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      io.unobserve(e.target);
+      for (const fn of watchers.get(e.target) || []) fn();
+      watchers.delete(e.target);
+    }
+  }, { threshold: 0, rootMargin: '0px 0px -12% 0px' });
+  const whenVisible = (el, fn) => {
+    const t = el.closest('[data-bp-curtain="wait"]') || el;
+    if (!watchers.has(t)) { watchers.set(t, []); watchIO.observe(t); }
+    watchers.get(t).push(t === el ? fn : () => setTimeout(fn, 350));
+  };
+  const noAfter = el => getComputedStyle(el, '::after').content === 'none';
+
+  function parallax() {
+    const items = [];
+    for (const img of document.querySelectorAll('main section img')) {
+      if (img.closest('#bp-hero, [class*="marquee"]')) continue;
+      const r = img.getBoundingClientRect();
+      if (r.width < 200) continue;
+      const cs = getComputedStyle(img);
+      // leave images that already move themselves alone
+      if (cs.translate !== 'none' || cs.transform !== 'none' || cs.scale !== 'none') continue;
+      const abs = cs.position === 'absolute';
+      const clipped = getComputedStyle(img.parentElement).overflow !== 'visible';
+      img.dataset.bpPx = !abs && clipped ? 'zoom' : '';
+      items.push({ el: img, f: abs ? .12 : .05, max: abs ? 80 : r.height * .035, py: 0 });
+    }
+    if (!items.length) return;
+    onScroll(() => {
+      const vh = innerHeight;
+      for (const it of items) {
+        const r = it.el.getBoundingClientRect();
+        if (r.bottom < -300 || r.top > vh + 300) continue;
+        // the measured box already includes the current shift
+        const off = r.top - it.py + r.height / 2 - vh / 2;
+        it.py = Math.max(-it.max, Math.min(it.max, -off * it.f));
+        it.el.style.setProperty('--bp-py', it.py.toFixed(1) + 'px');
+      }
+    });
   }
 
-  function restore(h, { parts }) {
-    for (const { node, parent, added } of parts) {
-      if (!added[0] || added[0].parentNode !== parent) continue;
-      parent.insertBefore(node, added[0]);
-      for (const el of added) el.remove();
+  function curtains() {
+    const io = reveal('data-bp-curtain', el => setTimeout(() => el.removeAttribute('data-bp-curtain'), 1300), '-15%');
+    for (const el of document.querySelectorAll('main section, main .bg-white.rounded-2xl.py-16')) {
+      if (el.closest('#bp-hero') || el.parentElement.closest('section, [data-bp-curtain]') || !below(el)) continue;
+      el.dataset.bpCurtain = 'wait';
+      io.observe(el);
     }
-    h.removeAttribute('data-bp-words');
-    h.removeAttribute('aria-label');
   }
 
   function headings() {
-    const io = new IntersectionObserver(entries => {
-      for (const e of entries) {
-        if (!e.isIntersecting) continue;
-        const h = e.target;
-        io.unobserve(h);
-        h.dataset.bpWords = 'in';
-        const s = h._bpSplit;
-        setTimeout(() => restore(h, s), s.count * 45 + 900);
+    const show = h => {
+      h.dataset.bpLine = 'in';
+      if (h.dataset.bpTrack) {
+        h.dataset.bpTrack = 'in';
+        setTimeout(() => h.removeAttribute('data-bp-track'), 1200);
       }
-    }, { threshold: 0, rootMargin: '0px 0px -8% 0px' });
-
-    for (const h of document.querySelectorAll(HEADINGS)) {
-      if (h.closest('#bp-hero') || h.dataset.bpWords) continue;
-      const clip = [h, ...h.querySelectorAll('*')].find(isClipText);
-      if (clip) { clip.dataset.bpFlow = ''; continue; }
-      if (reduced) continue;
-      h._bpSplit = split(h);
-      h.dataset.bpWords = 'wait';
-      io.observe(h);
+    };
+    for (const h of document.querySelectorAll('main h1, main h2')) {
+      if (h.closest('#bp-hero') || h.dataset.bpLine) continue;
+      const cs = getComputedStyle(h);
+      if (cs.position !== 'static' && cs.position !== 'relative' || !noAfter(h)) continue;
+      const a = cs.textAlign;
+      h.dataset.bpAlign = a === 'center' ? 'center' : a === 'right' || a === 'end' ? 'right' : 'left';
+      h.dataset.bpLine = 'wait';
+      if (!reduced && below(h)) h.dataset.bpTrack = 'wait';
+      whenVisible(h, () => show(h));
     }
   }
 
-  function tilt(card) {
-    card.dataset.bpTilt = '';
-    card.addEventListener('pointermove', e => {
-      const r = card.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
-      card.style.setProperty('--bp-ry', ((x - .5) * 8).toFixed(2) + 'deg');
-      card.style.setProperty('--bp-rx', ((.5 - y) * 6).toFixed(2) + 'deg');
-      card.style.setProperty('--bp-gx', (x * 100).toFixed(1) + '%');
-      card.style.setProperty('--bp-gy', (y * 100).toFixed(1) + '%');
-    });
-    card.addEventListener('pointerleave', () => {
-      card.style.setProperty('--bp-rx', '0deg');
-      card.style.setProperty('--bp-ry', '0deg');
-    });
-  }
-
-  function cards() {
+  function spotlights() {
+    const CARDS = 'main .rounded-2xl.bg-white:not(.py-16), main .rounded-3xl.bg-white, main .rounded-2xl[class*="bg-gradient"]';
     for (const c of document.querySelectorAll(CARDS)) {
-      if (c.dataset.bpTilt !== undefined || c.closest('#bp-hero') || c.parentElement.closest('[data-bp-tilt]')) continue;
-      // leave cards that already have their own transform alone
-      if (getComputedStyle(c).transform !== 'none') continue;
-      tilt(c);
-    }
-  }
-
-  // The page scrolls inside #page-scroller, not the window.
-  function progress() {
-    const bar = document.createElement('div');
-    bar.className = 'bp-progress';
-    bar.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(bar);
-    const sc = document.getElementById('page-scroller') || document.scrollingElement;
-    let ticking = false;
-    const update = () => {
-      ticking = false;
-      const max = sc.scrollHeight - sc.clientHeight;
-      bar.style.setProperty('--bp-progress', max > 0 ? (sc.scrollTop / max).toFixed(4) : 0);
-    };
-    (sc === document.scrollingElement ? window : sc).addEventListener('scroll', () => {
-      if (!ticking) { ticking = true; requestAnimationFrame(update); }
-    }, { passive: true });
-    update();
-  }
-
-  function magnets() {
-    for (const b of document.querySelectorAll('a.bg-primary-800, button.bg-primary-800')) {
-      if (b.dataset.bpMagnet !== undefined) continue;
-      // buttons with their own translate (e.g. Tailwind hover shifts) are left alone
-      if (getComputedStyle(b).translate !== 'none') continue;
-      b.dataset.bpMagnet = '';
-      b.addEventListener('pointermove', e => {
-        const r = b.getBoundingClientRect();
-        b.style.setProperty('--bp-tx', ((e.clientX - r.left - r.width / 2) * .18).toFixed(1) + 'px');
-        b.style.setProperty('--bp-ty', ((e.clientY - r.top - r.height / 2) * .3).toFixed(1) + 'px');
-      });
-      b.addEventListener('pointerleave', () => {
-        b.style.setProperty('--bp-tx', '0px');
-        b.style.setProperty('--bp-ty', '0px');
+      if (c.dataset.bpSpot !== undefined || c.closest('#bp-hero') || c.parentElement.closest('[data-bp-spot]') || !noAfter(c)) continue;
+      if (getComputedStyle(c).position === 'static') {
+        // making it relative would re-anchor absolutely positioned children
+        if ([...c.querySelectorAll('*')].some(n => getComputedStyle(n).position === 'absolute')) continue;
+        c.dataset.bpSpot = 'rel';
+      } else c.dataset.bpSpot = '';
+      c.addEventListener('pointermove', e => {
+        const r = c.getBoundingClientRect();
+        c.style.setProperty('--bp-sx', (e.clientX - r.left).toFixed(0) + 'px');
+        c.style.setProperty('--bp-sy', (e.clientY - r.top).toFixed(0) + 'px');
       });
     }
   }
 
-  // Images in sliders/overlapping layers may never count as "on screen"
-  // themselves, so each image is revealed when its section scrolls in.
-  // Images in moving strips (marquees) are skipped.
-  function images() {
-    const bySection = new Map();
-    const io = new IntersectionObserver(entries => {
-      for (const e of entries) {
-        if (!e.isIntersecting) continue;
-        io.unobserve(e.target);
-        for (const img of bySection.get(e.target) || []) {
-          img.dataset.bpImg = 'in';
-          setTimeout(() => img.removeAttribute('data-bp-img'), 1400);
+  // "~2,500", "6,991", "38%" ... count from 0 and end on the exact original text.
+  function counters() {
+    const NUM = /^([~$+]?)(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?([%+kKmMx]*)$/;
+    function run(el) {
+      const node = el._bpNode, orig = node.nodeValue;
+      const [, pre, int, dec, suf] = el._bpParts;
+      const lead = orig.match(/^\s*/)[0], trail = orig.match(/\s*$/)[0];
+      const target = parseFloat(int.replace(/,/g, '') + (dec || ''));
+      const places = dec ? dec.length - 1 : 0, commas = int.includes(',');
+      const t0 = performance.now(), dur = 1400;
+      el.dataset.bpCount = '';
+      const step = now => {
+        const p = Math.min(1, (now - t0) / dur), v = target * (1 - Math.pow(1 - p, 3));
+        if (p < 1) {
+          let s = v.toFixed(places);
+          if (commas) s = Number(s).toLocaleString('en-US', { minimumFractionDigits: places, maximumFractionDigits: places });
+          node.nodeValue = lead + pre + s + suf + trail;
+          requestAnimationFrame(step);
+        } else {
+          node.nodeValue = orig;
+          el.removeAttribute('data-bp-count');
         }
-      }
-    }, { threshold: 0, rootMargin: '0px 0px -25% 0px' });
-    const vh = innerHeight;
-    for (const img of document.querySelectorAll('main section img')) {
-      const r = img.getBoundingClientRect();
-      if (r.width < 300 || r.top < vh || img.closest('#bp-hero, [class*="marquee"]')) continue;
-      const cs = getComputedStyle(img);
-      if (cs.clipPath !== 'none' || cs.position === 'absolute' || cs.position === 'fixed') continue;
-      const sec = img.closest('section');
-      if (!bySection.has(sec)) { bySection.set(sec, []); io.observe(sec); }
-      bySection.get(sec).push(img);
-      img.dataset.bpImg = 'wait';
+      };
+      requestAnimationFrame(step);
+    }
+    for (const el of document.querySelectorAll('main *')) {
+      if (el.children.length || el.closest('#bp-hero, script, style')) continue;
+      const node = el.firstChild;
+      if (!node || node.nodeType !== 3 || el.childNodes.length !== 1) continue;
+      const m = node.nodeValue.trim().match(NUM);
+      if (!m || parseFloat(m[2].replace(/,/g, '')) < 10) continue;
+      el._bpNode = node;
+      el._bpParts = m;
+      whenVisible(el, () => run(el));
     }
   }
 
-  function icons() {
-    for (const card of document.querySelectorAll('[data-bp-tilt]')) {
-      for (const el of card.querySelectorAll('img, svg')) {
-        if (el.dataset.bpIcon !== undefined) continue;
-        const r = el.getBoundingClientRect();
-        if (r.width && r.width <= 64 && r.height <= 64) {
-          el.dataset.bpIcon = '';
-          el.style.setProperty('--bp-bd', -(Math.random() * 3.6).toFixed(2) + 's');
-        }
-      }
-    }
-  }
-
-  // Rose dot on the pointer plus a ring that eases after it.
-  function cursor() {
-    if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-    const dot = document.createElement('div'), ring = document.createElement('div');
-    dot.className = 'bp-cursor off';
-    ring.className = 'bp-cursor-ring off';
-    dot.setAttribute('aria-hidden', 'true');
-    ring.setAttribute('aria-hidden', 'true');
-    document.body.append(dot, ring);
-    let x = -200, y = -200, rx = x, ry = y, running = false;
-    const CLICKABLE = 'a, button, [role="button"], input, label, [data-bp-tilt]';
-    const frame = () => {
-      rx += (x - rx) * .18; ry += (y - ry) * .18;
-      ring.style.setProperty('--cx', rx.toFixed(1) + 'px');
-      ring.style.setProperty('--cy', ry.toFixed(1) + 'px');
-      if (Math.abs(x - rx) + Math.abs(y - ry) > .5) requestAnimationFrame(frame); else running = false;
-    };
-    addEventListener('pointermove', e => {
-      x = e.clientX; y = e.clientY;
-      dot.style.setProperty('--cx', x + 'px');
-      dot.style.setProperty('--cy', y + 'px');
-      dot.classList.remove('off'); ring.classList.remove('off');
-      ring.classList.toggle('on', !!(e.target.closest && e.target.closest(CLICKABLE)));
-      if (!running) { running = true; requestAnimationFrame(frame); }
-    }, { passive: true });
-    // hide when the pointer leaves the page or goes into the chat iframe
-    document.addEventListener('pointerout', e => {
-      if (!e.relatedTarget) { dot.classList.add('off'); ring.classList.add('off'); }
-    });
-  }
-
-  // Ripple from the click point on buttons and cards that are already
-  // positioned (so the ripple box never changes how they lay out).
-  function ripples() {
-    document.addEventListener('pointerdown', e => {
-      const host = e.target.closest && e.target.closest('main a, main button, nav a, nav button, [data-bp-tilt]');
-      if (!host || getComputedStyle(host).position === 'static' && host.dataset.bpTilt === undefined) return;
-      const r = host.getBoundingClientRect();
-      const box = document.createElement('span');
-      box.className = 'bp-ripple-box';
-      box.setAttribute('aria-hidden', 'true');
-      const dot = document.createElement('span');
-      dot.className = 'bp-ripple';
-      dot.style.setProperty('--x', (e.clientX - r.left) + 'px');
-      dot.style.setProperty('--y', (e.clientY - r.top) + 'px');
-      dot.style.setProperty('--d', Math.max(r.width, r.height) * 2.2 + 'px');
-      box.appendChild(dot);
-      host.appendChild(box);
-      setTimeout(() => box.remove(), 700);
-    }, { passive: true });
-  }
-
-  // Cards pop in and paragraphs sharpen in as they scroll into view; things
-  // already on screen are left as they are.
-  function pops() {
-    const io = new IntersectionObserver(entries => {
-      for (const e of entries) {
-        if (!e.isIntersecting) continue;
-        const el = e.target;
-        io.unobserve(el);
-        const key = el.dataset.bpPop !== undefined ? 'data-bp-pop' : 'data-bp-fade';
-        el.setAttribute(key, 'in');
-        setTimeout(() => { el.removeAttribute(key); el.style.removeProperty('--bp-pd'); }, 1500);
-      }
-    }, { threshold: 0, rootMargin: '0px 0px -10% 0px' });
-    const vh = innerHeight;
-    const seen = new Map();
-    const below = el => { const r = el.getBoundingClientRect(); return r.height && r.top >= vh; };
-    const stagger = el => {
-      const n = seen.get(el.parentNode) || 0;
-      seen.set(el.parentNode, n + 1);
-      if (n) el.style.setProperty('--bp-pd', Math.min(n, 5) * .1 + 's');
-    };
-    for (const c of document.querySelectorAll('[data-bp-tilt]')) {
-      if (!below(c) || c.parentElement.closest('[data-bp-pop]')) continue;
-      stagger(c);
-      c.dataset.bpPop = 'wait';
-      io.observe(c);
-    }
-    for (const p of document.querySelectorAll('main section p')) {
-      if (p.textContent.trim().length < 40 || !below(p) || p.closest('#bp-hero, [data-bp-pop]')) continue;
-      stagger(p);
-      p.dataset.bpFade = 'wait';
-      io.observe(p);
-    }
+  function glassNav() {
+    const nav = document.querySelector('#page-scroller nav') || document.querySelector('nav');
+    if (!nav) return;
+    onScroll(sc => { if (sc.scrollTop > 24) nav.dataset.bpScrolled = ''; else nav.removeAttribute('data-bp-scrolled'); });
   }
 
   let started = false;
   function start() {
     if (started) return;
     started = true;
+    root.dataset.bpReady = '';
+    // curtains first, so headings and counters inside them hang off their curtain
+    if (!reduced) curtains();
     headings();
+    glassNav();
+    spotlights();
     if (reduced) return;
-    progress();
-    images();
-    cursor();
-    ripples();
-    const live = () => { cards(); magnets(); icons(); };
-    live();
-    pops();
+    parallax();
+    counters();
     let pending = false;
     new MutationObserver(() => {
       if (pending) return;
       pending = true;
-      requestAnimationFrame(() => { pending = false; live(); });
+      requestAnimationFrame(() => { pending = false; spotlights(); });
     }).observe(document.querySelector('main') || document.body, { childList: true, subtree: true });
   }
   window.addEventListener('load', () => setTimeout(start, 600));

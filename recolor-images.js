@@ -1,5 +1,5 @@
 // Moves purple in the archived raster images (WebP/PNG/JPEG) to the BetterPitch
-// rose/crimson (version 2), the same hue shift server.js applies to CSS/HTML
+// black & gold (version 3), the same mapping server.js applies to CSS/HTML
 // colours. Only purple pixels change (hue 235-340); skin, greys, black and
 // white stay as they are.
 // Results go to archive/recolored/<file>; the originals are left untouched and
@@ -34,10 +34,13 @@ async function recolorInPage(dataUrl, type) {
     // Soft edges on hue and saturation so there is no visible seam in gradients/photos.
     const w = Math.min(1, Math.max(0, (h - 235) / 15), Math.max(0, (340 - h) / 15)) * Math.min(1, Math.max(0, (s - .08) / .1));
     if (w <= 0) continue;
-    const nh = 338 + (Math.min(335, Math.max(240, h)) - 240) * .17;
-    d[i] += (f(0, nh, s, l) - d[i]) * w;
-    d[i + 1] += (f(8, nh, s, l) - d[i + 1]) * w;
-    d[i + 2] += (f(4, nh, s, l) - d[i + 2]) * w;
+    // same mapping as toTheme() in server.js: dark -> warm near-black, light -> champagne gold
+    const t = Math.min(1, Math.max(0, (l - .38) / .17));
+    const nh = 40 + (Math.min(335, Math.max(240, h)) - 240) * .06;
+    const ns = s * .3 + (Math.min(s, .6) * .85 - s * .3) * t, nl = l * .35 + (l - l * .35) * t;
+    d[i] += (f(0, nh, ns, nl) - d[i]) * w;
+    d[i + 1] += (f(8, nh, ns, nl) - d[i + 1]) * w;
+    d[i + 2] += (f(4, nh, ns, nl) - d[i + 2]) * w;
     changed++;
   }
   if (changed < 50) return null;
