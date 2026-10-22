@@ -110,38 +110,68 @@
     if (foot) edges.push({ el: foot, side: 'top' });
     const box = document.querySelector('#bp-hero .bph-box');
     if (box) edges.push({ el: box, side: 'bottom' });
-    const S = edges.map(e => ({ ...e, disp: 0, vel: 0, at: .5, grab: false }));
-    let lastY = mouse.y;
+    const S = edges.map(e => ({ ...e, disp: 0, vel: 0, at: .5, grab: false, y: 0, x1: 0, x2: 0 }));
+    // Nothing runs while the strings rest (they are invisible then): a string only
+    // shows, and the loop only runs, from the moment the cursor catches one until
+    // it has stopped vibrating.
+    const measure = () => {
+      for (const s of S) {
+        const r = s.el.getBoundingClientRect();
+        s.y = s.side === 'top' ? r.top : r.bottom - 1;
+        s.x1 = r.left + 32; s.x2 = r.right - 32;
+      }
+    };
+    let running = false, lastY = mouse.y;
     const frame = () => {
+      measure();
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, innerWidth, innerHeight);
+      let active = false;
       for (const s of S) {
-        const r = s.el.getBoundingClientRect(), y = s.side === 'top' ? r.top : r.bottom - 1;
-        const x1 = r.left + 32, x2 = r.right - 32;
-        if (y < -80 || y > innerHeight + 80 || x2 <= x1) { s.disp = s.vel = 0; s.grab = false; continue; }
-        const inX = mouse.x > x1 && mouse.x < x2, d = mouse.y - y, was = lastY - y;
-        // the cursor catches the string when it crosses it, and drags it until it slips off
-        if (!s.grab && inX && Math.sign(d) !== Math.sign(was) && Math.abs(was) < 120) { s.grab = true; s.at = (mouse.x - x1) / (x2 - x1); }
+        if (!s.grab && !s.disp) continue;
+        const { y, x1, x2 } = s, inX = mouse.x > x1 && mouse.x < x2, d = mouse.y - y;
         if (s.grab) {
+          // dragged until the cursor slips off
           if (!inX || Math.abs(d) > 70) s.grab = false;
           else { s.vel = d - s.disp; s.disp = d; s.at += ((mouse.x - x1) / (x2 - x1) - s.at) * .3; }
         }
         if (!s.grab) {
           s.vel += -.09 * s.disp; s.vel *= .9; s.disp += s.vel;
-          if (Math.abs(s.disp) < .05 && Math.abs(s.vel) < .05) s.disp = s.vel = 0;
+          if (Math.abs(s.disp) < .05 && Math.abs(s.vel) < .05) { s.disp = s.vel = 0; continue; }
         }
-        const px = x1 + (x2 - x1) * s.at, k = Math.min(1, Math.abs(s.disp) / 50);
+        active = true;
+        const px = x1 + (x2 - x1) * s.at, k = Math.min(1, Math.abs(s.disp) / 40);
         ctx.beginPath();
         ctx.moveTo(x1, y);
         ctx.quadraticCurveTo(px, y + s.disp * 2, x2, y);
-        ctx.strokeStyle = `rgba(101,140,20,${.3 + k * .5})`;
+        ctx.strokeStyle = `rgba(101,140,20,${(.15 + k * .65).toFixed(2)})`;
         ctx.lineWidth = 1.2 + k;
         ctx.stroke();
       }
-      lastY = mouse.y;
-      requestAnimationFrame(frame);
+      if (active) requestAnimationFrame(frame);
+      else { running = false; ctx.clearRect(0, 0, innerWidth, innerHeight); }
     };
-    requestAnimationFrame(frame);
+    // the cursor catches a string when it crosses it
+    let raf = 0;
+    addEventListener('pointermove', () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const was = lastY;
+        lastY = mouse.y;
+        if (running) return;
+        measure();
+        for (const s of S) {
+          if (s.y < 0 || s.y > innerHeight || mouse.x <= s.x1 || mouse.x >= s.x2) continue;
+          const d = mouse.y - s.y, p = was - s.y;
+          if (Math.sign(d) !== Math.sign(p) && Math.abs(p) < 120) {
+            s.grab = true; s.disp = d; s.vel = 0; s.at = (mouse.x - s.x1) / (s.x2 - s.x1);
+            running = true;
+          }
+        }
+        if (running) requestAnimationFrame(frame);
+      });
+    }, { passive: true });
   }
 
   const CARDS = 'main .rounded-2xl.bg-white:not(.py-16), main .rounded-3xl.bg-white, main .rounded-xl.bg-white';
@@ -263,7 +293,8 @@
     new MutationObserver(() => {
       if (pending) return;
       pending = true;
-      requestAnimationFrame(() => { pending = false; directional(); decode(); peel(); scanImages(); });
+      // batched: React can add many nodes in a burst
+      setTimeout(() => { pending = false; directional(); decode(); peel(); scanImages(); }, 400);
     }).observe(document.querySelector('main') || document.body, { childList: true, subtree: true });
   }
   // after theme.js (load + 600ms) and motion.js (load + 900ms)

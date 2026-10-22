@@ -12,7 +12,7 @@ main .bg-white.rounded-2xl.py-16{
 
 ::selection{background:#d9f99d;color:#0e0f0c}
 
-/* lime light on dark sections: soft patches drifting past each other */
+/* lime light on dark sections: soft patches (static, so the big section is painted once) */
 [data-bp-caustic]{
   background-image:
     radial-gradient(32% 22% at 20% 30%,rgba(200,245,110,.10),transparent 70%),
@@ -20,10 +20,7 @@ main .bg-white.rounded-2xl.py-16{
     radial-gradient(36% 24% at 55% 70%,rgba(170,225,60,.09),transparent 70%),
     radial-gradient(24% 16% at 10% 80%,rgba(235,252,190,.07),transparent 70%);
   background-size:140% 140%,160% 160%,150% 150%,170% 170%;
-  animation:bpCaustic 18s ease-in-out infinite alternate}
-@keyframes bpCaustic{
-  0%{background-position:0% 0%,100% 0%,50% 100%,0% 100%}
-  100%{background-position:100% 60%,0% 80%,20% 0%,90% 20%}}
+  background-position:20% 10%,80% 20%,40% 90%,10% 80%}
 
 /* sections rise into view behind a moving wave (--bp-tide 0% -> 100%) */
 @property --bp-tide{syntax:"<percentage>";inherits:false;initial-value:100%}
@@ -61,15 +58,19 @@ a.bg-primary-800:hover,button.bg-primary-800:hover{
 /* interact.js: elastic strings along the section edges */
 .bp-strings{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:2147482999}
 
+/* motion.js: logos in the marquees bob as if floating (staggered by --bp-bd) */
+[data-bp-bob]{animation:bpBob 3.2s ease-in-out infinite;animation-delay:var(--bp-bd,0s)}
+@keyframes bpBob{0%,100%{translate:0 0}50%{translate:0 -5px}}
+
 /* ---- Gen Z layer (genz.js) ---- */
 
 /* film grain drifting over the whole page (a pseudo-element, so React's <html> is untouched) */
-html::after{content:"";position:fixed;inset:-50%;width:200%;height:200%;z-index:2147483002;pointer-events:none;opacity:.07;
+html::after{content:"";position:fixed;inset:-64px;z-index:2147483002;pointer-events:none;opacity:.07;
   background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  animation:bpGrain .9s steps(6) infinite;will-change:transform}
+  animation:bpGrain 1s steps(5) infinite;will-change:transform}
 @keyframes bpGrain{
-  0%{transform:translate(0,0)}17%{transform:translate(-4%,3%)}33%{transform:translate(3%,-5%)}
-  50%{transform:translate(-2%,6%)}67%{transform:translate(5%,2%)}83%{transform:translate(-5%,-3%)}100%{transform:translate(0,0)}}
+  0%{transform:translate(0,0)}20%{transform:translate(-37px,23px)}40%{transform:translate(29px,-41px)}
+  60%{transform:translate(-17px,47px)}80%{transform:translate(43px,13px)}100%{transform:translate(0,0)}}
 
 /* headings glitch: an RGB split (lime / cyan) jittering for a moment */
 [data-bp-glitch]{animation:bpGlitch .45s steps(2) 1}
@@ -104,7 +105,6 @@ html::after{content:"";position:fixed;inset:-50%;width:200%;height:200%;z-index:
   60%{rotate:-4deg;scale:1.05}80%{rotate:2deg;scale:1.02}100%{rotate:0deg;scale:1}}
 
 @media (prefers-reduced-motion:reduce){
-  html::after{animation:none}
-  [data-bp-caustic]{animation:none}
+  html::after,[data-bp-bob]{animation:none}
   [data-bp-tide],[data-bp-iris]{transition:none}
 }

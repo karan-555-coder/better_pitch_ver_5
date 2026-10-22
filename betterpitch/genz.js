@@ -83,7 +83,15 @@
       return t.length >= 2 && t.length <= 60 && r.height >= 14 && r.height <= 48 && r.width <= 520 &&
         parseFloat(cs.borderTopLeftRadius) >= r.height / 2 - 1 && cs.backgroundColor !== 'rgba(0, 0, 0, 0)';
     });
-    for (const el of [...pills, ...$$('#bp-hero .bph-pill, #bp-hero .bph-proof > div')]) el.dataset.bpSticker = '';
+    for (const el of [...pills, ...$$('#bp-hero .bph-pill, #bp-hero .bph-proof > div')]) {
+      // a hover animation would replace the hero's entrance animation, and without it
+      // .bph-enter leaves the element hidden; so the class goes once the entrance is done
+      if (el.classList.contains('bph-enter')) {
+        const done = () => { el.classList.remove('bph-enter'); el.dataset.bpSticker = ''; };
+        const running = el.getAnimations().filter(a => a.playState !== 'finished');
+        if (running.length) Promise.all(running.map(a => a.finished)).then(done, done); else done();
+      } else el.dataset.bpSticker = '';
+    }
   }
 
   let started = false;
@@ -101,7 +109,8 @@
     new MutationObserver(() => {
       if (pending) return;
       pending = true;
-      requestAnimationFrame(() => { pending = false; brutal(); reactions(); });
+      // batched: React can add many nodes in a burst
+      setTimeout(() => { pending = false; brutal(); reactions(); }, 400);
     }).observe(document.querySelector('main') || document.body, { childList: true, subtree: true });
   }
   // after theme.js, motion.js and interact.js

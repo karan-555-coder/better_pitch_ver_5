@@ -1,9 +1,8 @@
 // Scroll-driven motion for version 5 on GSAP + ScrollTrigger (served by
 // server.js from node_modules), on top of theme.js:
 //  - headings come in rippled (an SVG distortion) and calm down until still;
-//  - cards surface one after another, rising and coming into focus;
-//  - logos in the marquees bob like they are floating;
-//  - the page background takes on a faint lime tint as you scroll down.
+//  - cards surface one after another;
+//  - logos in the marquees bob like they are floating.
 // It only animates elements that have no transform of their own and starts
 // after theme.js, so the two layers never fight over the same property.
 (function () {
@@ -54,32 +53,26 @@
   function surface() {
     const cards = $$(CARDS).filter(c => !skip(c) && below(c) && free(c) && !c.parentElement.closest(CARDS));
     if (!cards.length) return;
-    gsap.set(cards, { y: 70, scale: .96, autoAlpha: 0, filter: 'blur(8px)' });
+    gsap.set(cards, { y: 70, scale: .96, autoAlpha: 0 });
     ScrollTrigger.batch(cards, {
       start: 'top 92%', once: true,
       onEnter: batch => gsap.to(batch, {
-        y: 0, scale: 1, autoAlpha: 1, filter: 'blur(0px)', duration: 1.1, ease: 'sine.out', stagger: .12,
-        clearProps: 'transform,opacity,visibility,filter',
+        y: 0, scale: 1, autoAlpha: 1, duration: 1.1, ease: 'sine.out', stagger: .12,
+        clearProps: 'transform,opacity,visibility',
       }),
     });
   }
 
+  // a CSS animation on translate (theme.css), so dozens of logos cost nothing on the main thread
   function bob() {
     $$('[class*="marquee"] img, [class*="marquee"] svg').forEach((el, i) => {
       const r = el.getBoundingClientRect();
       if (!r.width || r.width > 220 || !free(el)) return;
-      gsap.to(el, { y: -5, duration: 1.6, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: (i % 8) * .2 });
+      el.style.setProperty('--bp-bd', (-(i % 8) * .4).toFixed(1) + 's');
+      el.dataset.bpBob = '';
     });
   }
 
-  function depth() {
-    const main = document.querySelector('main');
-    if (!main) return;
-    gsap.fromTo(main, { '--color-secondary-light-ivory': 'rgb(247,247,244)' }, {
-      '--color-secondary-light-ivory': 'rgb(238,241,229)', ease: 'none',
-      scrollTrigger: { trigger: main, start: 'top top', end: 'bottom bottom', scrub: true },
-    });
-  }
 
   let started = false;
   function start() {
@@ -91,7 +84,6 @@
     ripples();
     surface();
     bob();
-    depth();
     ScrollTrigger.refresh();
   }
   // theme.js starts at load + 600ms; this goes after it

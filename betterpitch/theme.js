@@ -2,7 +2,8 @@
 // HTML page by server.js:
 //  - soft lime light drifts over dark sections;
 //  - sections rise into view behind a wave, like the tide coming in;
-//  - images open out of a small oval.
+//  - images open out of a small oval;
+//  - the hero's looping animations pause while it is off screen.
 // GSAP motion lives in motion.js and pointer interactions in interact.js.
 // Like content.js it waits for React to hydrate, and it only sets data
 // attributes and custom properties, removing the entrance ones once they have
@@ -58,10 +59,20 @@
     }
   }
 
+  // the hero's looping animations pause while it is scrolled out of view
+  function pauseHero() {
+    const hero = document.getElementById('bp-hero');
+    if (!hero) return;
+    new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) hero.removeAttribute('data-bp-off'); else hero.dataset.bpOff = '';
+    }).observe(hero);
+  }
+
   let started = false;
   function start() {
     if (started) return;
     started = true;
+    pauseHero();
     caustics();
     if (!reduced) {
       tides();
