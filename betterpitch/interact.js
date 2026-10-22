@@ -98,8 +98,11 @@
     for (const el of $$('#bp-hero .bph-feature, #bp-hero .bph-proof > div')) {
       const ready = () => {
         // the CSS entrance animation would otherwise win over GSAP's inline transform
+        // so it is dropped, and the end state it held (no offset, fully visible)
+        // is written inline; .bph-enter alone would leave it 26px low
         el.style.animation = 'none';
         el.style.opacity = '1';
+        gsap.set(el, { x: 0, y: 0 });
         el.dataset.bpThrow = '';
         const home = function () { gsap.to(this.target, { x: 0, y: 0, rotation: 0, scale: 1, duration: 1.3, ease: 'elastic.out(1, .4)' }); };
         Draggable.create(el, {
