@@ -30,6 +30,7 @@ again. Changes to files in `betterpitch/` only need a page refresh
 | Colours | `recolor()` in `server.js` | Moves every purple/violet/magenta colour (hue 240-335) in CSS, HTML, JS, SVG and RSC data to blue: dark and mid shades become deep navy and sapphire, light ones icy silver (alpha kept); ivory backgrounds become a cool silver-white, and the amber/pink stops of the heading gradient become silver and steel blue |
 | Images | `recolor-images.js` -> `archive/recolored/` | Same purple-to-navy/silver mapping on the pixels of the WebP/PNG/JPEG images; `server.js` serves the recoloured copy when one exists |
 | Motion | `betterpitch/theme.css`, `theme.js`, `hero.css` | Night-sky hero (drifting aurora, twinkling stars, a shooting star), star dust drifting over dark sections, headings rising in with a silver shine sweeping across them (again on hover), images developing out of moonlight, cards flipping up in 3D one after another, a metallic glare across cards on hover, navy buttons filling with liquid silver from the cursor, paragraphs inking in from silver, a nav that slips away while scrolling down and returns on the way up, gradient edges on the big white panels |
+| GSAP motion | `betterpitch/motion.js` (GSAP + ScrollTrigger from `node_modules`) | Hero copy, panel and tile grid drift apart as you scroll away while the box settles back, tiles follow the mouse, the play orb floats; dark sections open as a growing moon circle scrubbed with the scroll; a moonlight beam sweeps across the big white panels; images lean with scroll speed and the logo marquees speed up with it; small icons orbit in with a spring; footer links rise in one by one |
 
 Colour replacements in HTML and RSC payloads keep the exact byte length:
 Next.js embeds length-prefixed RSC rows, and a mismatch breaks hydration.
@@ -61,7 +62,7 @@ are `overflow: hidden`), so the scripts scroll that element (`scroller.js`).
 ## Files
 
 - `server.js` – replays `archive/` on localhost, injects the `betterpitch/` layers and recolours on the fly
-- `betterpitch/` – BetterPitch copy, hero, theme and motion
+- `betterpitch/` – BetterPitch copy, hero, theme and motion (`motion.js` uses GSAP, installed by `npm install`)
 - `recolor-images.js` – recolours purple in the archived images
 - `capture.js` – records the live site into `archive/` (headless Chrome)
 - `verify.js` / `compare.js` – check the local copy page by page / against the live site
